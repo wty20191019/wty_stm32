@@ -28,7 +28,7 @@ git status
 git commit -m "    "
 ```
 
-##### 推送更新
+##### 推送更新   (`git push origin main --force` 强制推送到远程仓库)
 ```git
 git push origin main
 ```
