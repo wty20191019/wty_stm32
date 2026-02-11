@@ -1,0 +1,33 @@
+# Keil MDK 编译生成文件
+*.bak
+*.ddk
+*.edk
+*.lst
+*.lnp
+*.mpf
+*.mpj
+*.obj
+*.omf
+*.plg
+*.rpt
+*.tmp
+*.__i
+*.crf
+*.o
+*.d
+*.axf
+*.tra
+*.dep
+JLinkLog.txt
+*.iex
+*.htm
+*.sct
+*.map
+
+# 目录
+Listings/
+Objects/
+
+# Keil 工程文件（但保留 .uvprojx/.uvoptx）
+*.uvguix.*
+*.opt
