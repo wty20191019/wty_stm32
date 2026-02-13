@@ -395,3 +395,6 @@ temp/
 
 
 ---
+
+
+### 当你执行 `git config --global https.proxy socks5://127.0.0.1:7890`Git 会通过 127.0.0.1:7890 代理服务器来连接 GitHub。
