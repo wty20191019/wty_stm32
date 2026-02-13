@@ -6,10 +6,16 @@
 #include "stm32f10x.h"                  // Device header
 #include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
-#include "I2C2.h"                       //Base    (PB11) (PB10)   I2C2
-#include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h
-#include "mpu6050.h"                    
-#include "inv_mpu.h"
+
+#include "I2C2.h"                       //Base    (PB11) (PB10)   I2C2.h
+
+    #include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h
+    
+    //====mpu6050dmp====//                  
+    #include "mpu6050.h"                    //Base    (PB11) (PB10)   I2C2.h    inv_mpu.h
+    #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
+
+
 
 //#include "PID_system.h"                 //base     systick_scheduler
 //#include "key.h"                        //Base    (PB1 ) (PB11)
