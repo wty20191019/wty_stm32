@@ -11,6 +11,6 @@
 //===============================================
 
 void I2C2_Init(void);
-void I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT);
+uint8_t I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT);
 
 #endif

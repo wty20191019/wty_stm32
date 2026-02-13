@@ -19,7 +19,7 @@ void I2C2_Init(void)
     I2C_InitTypeDef I2C_InitStructure;                                          //定义结构体变量
     I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;                                  //模式，选择为I2C模式
     I2C_InitStructure.I2C_ClockSpeed = clock_frequency*1000;                    //时钟速度，选择为clock_frequencykHz    标准速度（1-100kHz）    快速（101-400kHZ） 
-    I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_2;                          //时钟占空比，选择Tlow/Thigh = 2
+    I2C_InitStructure.I2C_DutyCycle = I2C_DutyCycle_16_9;                       //时钟占空比，选择I2C_DutyCycle_16_9
     I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;                                 //应答，选择使能
     I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;   //应答地址，选择7位，从机模式下才有效
     I2C_InitStructure.I2C_OwnAddress1 = 0x00;                                   //自身地址，从机模式下才有效
@@ -30,19 +30,27 @@ void I2C2_Init(void)
 
 }
 
-void I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
+
+//等待应答信号到来
+//返回值：1，接收应答失败
+//        0，接收应答成功
+
+uint8_t I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
 {
-    uint32_t Timeout;
-    Timeout = 10000;                                                //给定超时计数时间
+    uint32_t Timeout = 10000;                                       //给定超时计数时间
+    
     while (I2C_CheckEvent(I2Cx, I2C_EVENT) != SUCCESS)              //循环等待指定事件
     {
         Timeout --;                                                 //等待时，计数值自减
         if (Timeout == 0)                                           //自减到0后，等待超时
         {
-            /*超时的错误处理代码，可以添加到此处*/
-            break;                                                  //跳出等待，不等了
+            
+            I2C_GenerateSTOP(I2C2, ENABLE);
+            return 1;
+            
         }
-    }
+    }return 0;
+    
 }
 
 

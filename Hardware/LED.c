@@ -65,7 +65,7 @@ void LED1_Turn(void)
   */
 void LED2_ON(void)
 {
-    GPIO_ResetBits(GPIOA, GPIO_Pin_2);        //设置PA2引脚为低电平
+    GPIO_ResetBits(GPIOA, GPIO_Pin_2);        //设置PA2引脚为低电平      
 }
 
 /**

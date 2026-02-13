@@ -17,15 +17,7 @@
   */
 void MPU6050_WriteReg(uint8_t RegAddress, uint8_t Data)
 {
-//弃用 MyI2C
-//    MyI2C_Start();                            //I2C起始
-//    MyI2C_SendByte(MPU6050_ADDRESS);          //发送从机地址，读写位为0，表示即将写入
-//    MyI2C_ReceiveAck();                       //接收应答
-//    MyI2C_SendByte(RegAddress);               //发送寄存器地址
-//    MyI2C_ReceiveAck();                       //接收应答
-//    MyI2C_SendByte(Data);                     //发送要写入寄存器的数据
-//    MyI2C_ReceiveAck();                       //接收应答
-//    MyI2C_Stop();                             //I2C终止
+
 
 
     I2C_GenerateSTART(I2C2, ENABLE);                                            //硬件I2C生成起始条件
@@ -54,20 +46,7 @@ uint8_t MPU6050_ReadReg(uint8_t RegAddress)
 {
     uint8_t Data;
     
-//弃用 MyI2C
-//    MyI2C_Start();                            //I2C起始
-//    MyI2C_SendByte(MPU6050_ADDRESS);          //发送从机地址，读写位为0，表示即将写入
-//    MyI2C_ReceiveAck();                       //接收应答
-//    MyI2C_SendByte(RegAddress);               //发送寄存器地址
-//    MyI2C_ReceiveAck();                       //接收应答
-//    
-//    MyI2C_Start();                            //I2C重复起始
-//    MyI2C_SendByte(MPU6050_ADDRESS | 0x01);   //发送从机地址，读写位为1，表示即将读取
-//    MyI2C_ReceiveAck();                       //接收应答
-//    Data = MyI2C_ReceiveByte();               //接收指定寄存器的数据
-//    MyI2C_SendAck(1);                         //发送应答，给从机非应答，终止从机的数据输出
-//    MyI2C_Stop();                             //I2C终止
-    
+
     
     I2C_GenerateSTART(I2C2, ENABLE);                                        //硬件I2C生成起始条件
     I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);                     //等待EV5
@@ -97,6 +76,44 @@ uint8_t MPU6050_ReadReg(uint8_t RegAddress)
 }
 
 
+/*
+uint8_t MPU6050_ReadReg(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+{
+    if (len == 0 || buf == NULL) return 0;
+    
+    I2C_GenerateSTART(I2C2, ENABLE);
+    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);
+    
+    I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Transmitter);
+    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED);
+    
+    I2C_SendData(I2C2, reg);
+    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED);
+    
+    I2C_GenerateSTART(I2C2, ENABLE);
+    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);
+    
+    I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Receiver);
+    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED);
+    
+    for (uint8_t i = 0; i < len; i++)
+    {
+        if (i == len - 1)
+        {
+            I2C_AcknowledgeConfig(I2C2, DISABLE);
+            I2C_GenerateSTOP(I2C2, ENABLE);
+        }
+        
+        I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);
+        buf[i] = I2C_ReceiveData(I2C2);
+    }
+    
+    I2C_AcknowledgeConfig(I2C2, ENABLE);
+    
+    return len;
+}
+
+*/
 
 /**
   * 函    数：MPU6050初始化

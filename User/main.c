@@ -7,8 +7,10 @@
 #include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
 #include "I2C2.h"                       //Base    (PB11) (PB10)   I2C2
-#include "MPU6050.h"                    //Base    (PB11) (PB10)   I2C2.h
 #include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h
+#include "mpu6050.h"                    
+#include "inv_mpu.h"
+
 //#include "PID_system.h"                 //base     systick_scheduler
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "LED.h"                        //Base    (PA12)
@@ -30,11 +32,18 @@
 //变量定义
 
 //static uint16_t PWM_SetCompare1_i =0 ;
-uint8_t ID;                                //定义用于存放ID号的变量
-int16_t AX, AY, AZ, GX, GY, GZ;            //定义用于存放各个数据的变量
+//uint8_t ID;                                //定义用于存放ID号的变量
+//int16_t AX, AY, AZ, GX, GY, GZ;            //定义用于存放各个数据的变量
+
+float Pitch,Roll,Yaw;                                //俯仰角默认跟中值一样，翻滚角，偏航角
+int16_t ax,ay,az,gx,gy,gz;                            //加速度，陀螺仪角速度
 
 
 //===================================================================================================
+
+
+u8 MPU_Get_Gyroscope(short *gx,short *gy,short *gz);
+u8 MPU_Get_Accelerometer(short *ax,short *ay,short *az);
 
 
 void OLED_Show_0()
@@ -47,7 +56,6 @@ void OLED_Show_0()
     if(i>9)
         {
         i=0;
-        //OLED_Clear();
         }
         
         
@@ -60,17 +68,23 @@ void OLED_Show_0()
 
 
         //显示ID号
-    OLED_ShowString(1, 11, "ID:");
-    OLED_ShowHexNum(1, 14, ID, 2);
+
     
-    //OLED显示数据
-    OLED_ShowSignedNum(2, 1, AX, 5);                    
-    OLED_ShowSignedNum(3, 1, AY, 5);
-    OLED_ShowSignedNum(4, 1, AZ, 5);
-    OLED_ShowSignedNum(2, 8, GX, 5);
-    OLED_ShowSignedNum(3, 8, GY, 5);
-    OLED_ShowSignedNum(4, 8, GZ, 5);
-  
+    //OLED显示mpu6050数据
+
+    OLED_ShowSignedNum(2, 8 , gx, 5);
+    OLED_ShowSignedNum(3, 8 , gy, 5);
+    OLED_ShowSignedNum(4, 8 , gz, 5);
+    
+//    OLED_ShowSignedNum(2, 13, ax, 2);
+//    OLED_ShowSignedNum(3, 13, ay, 2);
+//    OLED_ShowSignedNum(4, 13, az, 2);
+    
+    OLED_ShowSignedNum(2, 1 , Pitch, 5);
+    OLED_ShowSignedNum(3, 1 , Roll , 5);
+    OLED_ShowSignedNum(4, 1 , Yaw  , 5);    
+    
+    
 
 };
 
@@ -78,12 +92,9 @@ void OLED_Show_0()
 
 void GET_MPU6050_info()
 {   
-    //获取MPU6050的ID号
-    ID = MPU6050_GetID();
-    
-    //获取MPU6050的数据
-    MPU6050_GetData(&AX, &AY, &AZ, &GX, &GY, &GZ);        
-
+//    MPU6050_DMP_Get_Data(&Pitch,&Roll,&Yaw);                //读取姿态信息(其中偏航角有飘移是正常现象)
+//    MPU_Get_Gyroscope(&gx,&gy,&gz);
+//    MPU_Get_Accelerometer(&ax,&ay,&az);
 }
 
 
@@ -144,7 +155,8 @@ int main(void)
     DWT_Init();
     I2C2_Init();
     OLED_Init();
-    MPU6050_Init();
+//    MPU6050_Init();   
+
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
@@ -159,9 +171,9 @@ SCH_Init();                                                         //
 //--------------------------------------------------------------------
     
     
-    SCH_AddTask(GET_MPU6050_info        ,100    ,PRIORITY_MID);
-    SCH_AddTask(OLED_Show_0             ,100    ,PRIORITY_LOW);
-    SCH_AddTask(OLED_OLED_Clear         ,1000   ,PRIORITY_LOW);
+    SCH_AddTask(GET_MPU6050_info    ,100    ,PRIORITY_MID);
+    SCH_AddTask(OLED_Show_0         ,100    ,PRIORITY_LOW);
+    SCH_AddTask(OLED_OLED_Clear     ,1000   ,PRIORITY_LOW);
 //    SCH_AddTask(Turn_PWM_SetCompare1_i  ,100    ,PRIORITY_LOW);
     
     
@@ -176,7 +188,11 @@ SCH_Start();                                                        //
     while (1)
     {
         
-        DWT_Delay_s(1);
+        //DWT_Delay_s(1);
+        //MPU6050_DMP_Get_Data(&Pitch,&Roll,&Yaw);                //读取姿态信息(其中偏航角有飘移是正常现象)
+        //MPU_Get_Gyroscope(&gx,&gy,&gz);
+        //MPU_Get_Accelerometer(&ax,&ay,&az);
+        
         
     }
 }

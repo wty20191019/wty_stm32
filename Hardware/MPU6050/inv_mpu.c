@@ -33,12 +33,14 @@
 #include "dmpmap.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "MPU6050.h"
-#include "Delay.h"
+#include "DWT_Delay.h"
+#include "I2C2.h" 
 
-#define   MPU6050			//定义我们使用的传感器为MPU6050
+
+#define   MPU6050               //定义我们使用的传感器为MPU6050
 
 //下面8个函数对接dmp库
-#define delay_ms    delay_ms       //delay实现
+#define delay_ms    DWT_Delay_ms       //delay实现
 #define get_ms      get_ms         //自己写一个
 #define i2c_write   mpu6050_write
 #define i2c_read    mpu6050_read
@@ -46,13 +48,13 @@
 #define fabs        fabsf          //stm32自带
 #define min(a,b)    ((a<b)?a:b)    //自己写一个
 #define log_i(...)  do {} while (0)//自己写一个
-#define log_e(...)  do {} while (0)//自己写一个	
-	
+#define log_e(...)  do {} while (0)//自己写一个     
+     
 int dmp_set_gyro_bias(long *bias) ;
 int dmp_set_accel_bias(long *bias);
 
 
-u8 run_self_test(void)
+uint8_t run_self_test(void)
 {
     int result;
 //    char test_packet[4] = {0};
@@ -75,7 +77,7 @@ u8 run_self_test(void)
         accel[1] *= accel_sens;
         accel[2] *= accel_sens;
         dmp_set_accel_bias(accel);
-				return 0;
+                    return 0;
     }else return 1;
 }
 
@@ -517,12 +519,12 @@ const struct hw_s hw = {
 };
 */
 const struct hw_s hw={
-  0x68,	 //addr
-  1024,	 //max_fifo
-  118,	 //num_reg
-  340,	 //temp_sens
-  -521,	 //temp_offset
-  256	 //bank_size
+  0x68,      //addr
+  1024,      //max_fifo
+  118,      //num_reg
+  340,      //temp_sens
+  -521,      //temp_offset
+  256      //bank_size
 };
 const struct gyro_reg_s reg = {
 0x75,  //who_am_i
@@ -556,7 +558,7 @@ const struct gyro_reg_s reg = {
 
 //const struct test_s test = {
 //    .gyro_sens      = 32768/250,
-//    .accel_sens     = 32768/16,	  
+//    .accel_sens     = 32768/16,       
 //    .reg_rate_div   = 0,    /* 1kHz. */
 //    .reg_lpf        = 1,    /* 188Hz. */
 //    .reg_gyro_fsr   = 0,    /* 250dps. */
@@ -571,27 +573,27 @@ const struct gyro_reg_s reg = {
 //    .max_accel_var  = 0.14f
 //};
 const struct test_s test={
-32768/250,		 //gyro_sens
-32768/16,		 //	accel_sens
-0,				 //	reg_rate_div
-1,				//	reg_lpf
-0,				 //	reg_gyro_fsr
-0x18,			//	reg_accel_fsr
-50,				//	wait_ms
-5,				//	packet_thresh
-10.0f,			 //	min_dps
-105.0f,			 //	max_dps
-0.14f,			//	max_gyro_var
-0.3f,		   //	min_g
-0.95f,		   //	max_g
-0.14f		   //	max_accel_var
+32768/250,           //gyro_sens
+32768/16,           //     accel_sens
+0,                     //     reg_rate_div
+1,                    //     reg_lpf
+0,                     //     reg_gyro_fsr
+0x18,               //     reg_accel_fsr
+50,                    //     wait_ms
+5,                    //     packet_thresh
+10.0f,                //     min_dps
+105.0f,                //     max_dps
+0.14f,               //     max_gyro_var
+0.3f,             //     min_g
+0.95f,             //     max_g
+0.14f             //     max_accel_var
 };
 /*
 static struct gyro_state_s st = {
     .reg = &reg,
     .hw = &hw,
     .test = &test
-};	*/
+};     */
 static struct gyro_state_s st={
   &reg,
   &hw,
@@ -2878,29 +2880,30 @@ static signed char gyro_orientation[9] = { 1, 0, 0,//不要改
 //返回值:0,正常
 //    其他,失败
  
-void get_ms(unsigned long *time){}	
+void get_ms(unsigned long *time){}     
  
 //mpu6050,dmp初始化
 //返回值:0,正常
-//    其他,失败	
-u8 MPU6050_DMP_Init(void)
+//    其他,失败     
+uint8_t MPU6050_DMP_Init(void)
 {
-	MPU6050_IIC_IO_Init();                                                    
-	if(!mpu_init())                                                               //mpu初始化
-	{	
-		mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);		                      //设置需要的传感器
-		mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);	                      //设置fifo
-		mpu_set_sample_rate(DEFAULT_MPU_HZ);	   	  		                        //设置采集样率,多久更新fifo，并产生int中断
-		dmp_load_motion_driver_firmware();   	  			                          //加载dmp固件
-		dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));//设置陀螺仪方向
-		dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
-		    DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-		    DMP_FEATURE_GYRO_CAL);	   	 					                                //dmp_enable_feature
-		dmp_set_fifo_rate(DEFAULT_MPU_HZ);   	 			                            //设置采集样率,多久更新fifo，并产生int中断
-		run_self_test();		                                                        //自检
-		mpu_set_dmp_state(1);                                                   //使能
-	}
-	return 0;
+     I2C2_Init();                                    //初始化IIC总线
+                                                    
+     if(!mpu_init())                                                               //mpu初始化
+     {     
+          mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);                                //设置需要的传感器
+          mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);                           //设置fifo
+          mpu_set_sample_rate(DEFAULT_MPU_HZ);                                                 //设置采集样率,多久更新fifo，并产生int中断
+          dmp_load_motion_driver_firmware();                                                   //加载dmp固件
+          dmp_set_orientation(inv_orientation_matrix_to_scalar(gyro_orientation));//设置陀螺仪方向
+          dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+              DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
+              DMP_FEATURE_GYRO_CAL);                                                                       //dmp_enable_feature
+          dmp_set_fifo_rate(DEFAULT_MPU_HZ);                                                    //设置采集样率,多久更新fifo，并产生int中断
+          run_self_test();                                                                  //自检
+          mpu_set_dmp_state(1);                                                   //使能
+     }
+     return 0;
 }
 
 //得到dmp处理后的数据(注意,本函数需要比较多堆栈,局部变量有点多)
@@ -2909,34 +2912,34 @@ u8 MPU6050_DMP_Init(void)
 //yaw:航向角   精度:0.1°   范围:-180.0°<---> +180.0°
 //返回值:0,正常
 //    其他,失败
-u8 MPU6050_DMP_Get_Data(float *pitch,float *roll,float *yaw)//（5MS  200HZ调用一下，给 DEFAULT_MPU_HZ 频率保持一致，或者int中断引脚读取）
+uint8_t MPU6050_DMP_Get_Data(float *pitch,float *roll,float *yaw)//（5MS  200HZ调用一下，给 DEFAULT_MPU_HZ 频率保持一致，或者int中断引脚读取）
 {                              //  （此处在主函数中一直调用，在中断函数里更新 频率未变）
-	float q0=1.0f,q1=0.0f,q2=0.0f,q3=0.0f;
-	unsigned long sensor_timestamp;
-	short gyro[3], accel[3], sensors;
-	unsigned char more;
-	long quat[4]; 
-	if(dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors,&more))return 1;	 
-	/* Gyro and accel data are written to the FIFO by the DMP in chip frame and hardware units.
-	 * This behavior is convenient because it keeps the gyro and accel outputs of dmp_read_fifo and mpu_read_fifo consistent.
-	**/
-	/*if (sensors & INV_XYZ_GYRO )
-	send_packet(PACKET_TYPE_GYRO, gyro);
-	if (sensors & INV_XYZ_ACCEL)
-	send_packet(PACKET_TYPE_ACCEL, accel); */
-	/* Unlike gyro and accel, quaternions are written to the FIFO in the body frame, q30.
-	 * The orientation is set by the scalar passed to dmp_set_orientation during initialization. 
-	**/
-	if(sensors&INV_WXYZ_QUAT) 
-	{
-		q0 = quat[0] / q30;	//q30格式转换为浮点数
-		q1 = quat[1] / q30;
-		q2 = quat[2] / q30;
-		q3 = quat[3] / q30; 
-		//计算得到俯仰角/横滚角/航向角
-		*pitch = asin(-2 * q1 * q3 + 2 * q0* q2)* 57.3;	// pitch
-		*roll  = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2* q2 + 1)* 57.3;	// roll
-		*yaw   = atan2(2*(q1*q2 + q0*q3),q0*q0+q1*q1-q2*q2-q3*q3) * 57.3;	//yaw
-	}else return 2;
-	return 0;
+     float q0=1.0f,q1=0.0f,q2=0.0f,q3=0.0f;
+     unsigned long sensor_timestamp;
+     short gyro[3], accel[3], sensors;
+     unsigned char more;
+     long quat[4]; 
+     if(dmp_read_fifo(gyro, accel, quat, &sensor_timestamp, &sensors,&more))return 1;      
+     /* Gyro and accel data are written to the FIFO by the DMP in chip frame and hardware units.
+      * This behavior is convenient because it keeps the gyro and accel outputs of dmp_read_fifo and mpu_read_fifo consistent.
+     **/
+     /*if (sensors & INV_XYZ_GYRO )
+     send_packet(PACKET_TYPE_GYRO, gyro);
+     if (sensors & INV_XYZ_ACCEL)
+     send_packet(PACKET_TYPE_ACCEL, accel); */
+     /* Unlike gyro and accel, quaternions are written to the FIFO in the body frame, q30.
+      * The orientation is set by the scalar passed to dmp_set_orientation during initialization. 
+     **/
+     if(sensors&INV_WXYZ_QUAT) 
+     {
+          q0 = quat[0] / q30;     //q30格式转换为浮点数
+          q1 = quat[1] / q30;
+          q2 = quat[2] / q30;
+          q3 = quat[3] / q30; 
+          //计算得到俯仰角/横滚角/航向角
+          *pitch = asin(-2 * q1 * q3 + 2 * q0* q2)* 57.3;     // pitch
+          *roll  = atan2(2 * q2 * q3 + 2 * q0 * q1, -2 * q1 * q1 - 2 * q2* q2 + 1)* 57.3;     // roll
+          *yaw   = atan2(2*(q1*q2 + q0*q3),q0*q0+q1*q1-q2*q2-q3*q3) * 57.3;     //yaw
+     }else return 2;
+     return 0;
 }

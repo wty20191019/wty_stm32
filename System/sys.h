@@ -1,5 +1,10 @@
+
+
+//  用于 mpu6050dmp
+
+
 #ifndef __SYS_H
-#define __SYS_H	
+#define __SYS_H     
 #include "stm32f10x.h"
 
 
@@ -11,9 +16,9 @@
 #include "stm32f10x_it.h"
 
 #include "stdbool.h" 
-#include "stdio.h"	
+#include "stdio.h"     
 #include <stdarg.h>
-#include "string.h"	 
+#include "string.h"      
 #include "math.h"
 #include "stdlib.h" 
  
@@ -25,34 +30,34 @@
 #endif 
 #ifndef NULL
 #define NULL    0
-#endif	
+#endif     
 
 typedef enum
 { 
-		GPIO_FK_IN=0,
-		GPIO_AD_IN=1,
+          GPIO_FK_IN=0,
+          GPIO_AD_IN=1,
 
-		GPIO_KL_OUT=2,
-		GPIO_KL_AF_OUT=3,
-		GPIO_TW_OUT=4,
-		GPIO_TW_AF_OUT=5,
+          GPIO_KL_OUT=2,
+          GPIO_KL_AF_OUT=3,
+          GPIO_TW_OUT=4,
+          GPIO_TW_AF_OUT=5,
 
-	  GPIO_P_NO=6,
-		GPIO_P_UP=7,
-		GPIO_P_DOWN=8,
+       GPIO_P_NO=6,
+          GPIO_P_UP=7,
+          GPIO_P_DOWN=8,
 
-		GPIO_2MHz=9,
-		GPIO_10MHz=10,
-		GPIO_25MHz=11,
-		GPIO_50MHz=12,
-		GPIO_100MHz=13
+          GPIO_2MHz=9,
+          GPIO_10MHz=10,
+          GPIO_25MHz=11,
+          GPIO_50MHz=12,
+          GPIO_100MHz=13
 }GPIO_My_TypeDef;
 void My_GPIO_Init(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin,GPIO_My_TypeDef mode,GPIO_My_TypeDef up_down,GPIO_My_TypeDef speed);
 
 typedef unsigned long long  u64;
 
-																	    
-	 
+                                                                                         
+      
 //位带操作,实现51类似的GPIO控制功能
 //具体实现思想,参考<<CM3权威指南>>第五章(87页~92页).
 //IO口操作宏定义
@@ -100,10 +105,10 @@ typedef unsigned long long  u64;
 #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)  //输入
 
 //以下为汇编函数
-void WFI_SET(void);		//执行WFI指令
-void INTX_DISABLE(void);//关闭所有中断
-void INTX_ENABLE(void);	//开启所有中断
-void MSR_MSP(u32 addr);	//设置堆栈地址
+void WFI_SET(void);             //执行WFI指令
+void INTX_DISABLE(void);        //关闭所有中断
+void INTX_ENABLE(void);         //开启所有中断
+void MSR_MSP(u32 addr);         //设置堆栈地址
 
 u32     power(u32 x,u32 y);
 u32     log_2(u32 x);

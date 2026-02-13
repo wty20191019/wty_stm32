@@ -126,9 +126,9 @@ int mpu_run_self_test(long *gyro, long *accel);
 int mpu_register_tap_cb(void (*func)(unsigned char, unsigned char));
 /*********************/
 /*********************/
-void get_ms(unsigned long *time);	
+void get_ms(unsigned long *time);     
 u8  MPU6050_DMP_Init(void);
-u8 	MPU6050_DMP_Get_Data(float *pitch,float *roll,float *yaw);//10MS  100HZ调用一下，给 DEFAULT_MPU_HZ 频率保持一致
+u8      MPU6050_DMP_Get_Data(float *pitch,float *roll,float *yaw);//10MS  100HZ调用一下，给 DEFAULT_MPU_HZ 频率保持一致
 /*********************/
 /********************/
 #endif  /* #ifndef _INV_MPU_H_ */
