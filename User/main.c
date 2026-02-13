@@ -42,8 +42,8 @@ int16_t ax,ay,az,gx,gy,gz;                            //加速度，陀螺仪角
 //===================================================================================================
 
 
-u8 MPU_Get_Gyroscope(short *gx,short *gy,short *gz);
-u8 MPU_Get_Accelerometer(short *ax,short *ay,short *az);
+//u8 MPU_Get_Gyroscope(short *gx,short *gy,short *gz);
+//u8 MPU_Get_Accelerometer(short *ax,short *ay,short *az);
 
 
 void OLED_Show_0()
@@ -67,24 +67,21 @@ void OLED_Show_0()
 //    OLED_ShowSignedNum(4 , 9 ,Encoder2_TIM4_Encoder_Get(),6);
 
 
-        //显示ID号
+        
 
     
     //OLED显示mpu6050数据
-
-    OLED_ShowSignedNum(2, 8 , gx, 5);
-    OLED_ShowSignedNum(3, 8 , gy, 5);
-    OLED_ShowSignedNum(4, 8 , gz, 5);
+    OLED_ShowSignedNum(2, 1 , Pitch, 3);
+    OLED_ShowSignedNum(3, 1 , Roll , 3);
+    OLED_ShowSignedNum(4, 1 , Yaw  , 3);
     
-//    OLED_ShowSignedNum(2, 13, ax, 2);
-//    OLED_ShowSignedNum(3, 13, ay, 2);
-//    OLED_ShowSignedNum(4, 13, az, 2);
+    OLED_ShowSignedNum(2, 5 , gx, 4);
+    OLED_ShowSignedNum(3, 5 , gy, 4);
+    OLED_ShowSignedNum(4, 5 , gz, 4);
     
-    OLED_ShowSignedNum(2, 1 , Pitch, 5);
-    OLED_ShowSignedNum(3, 1 , Roll , 5);
-    OLED_ShowSignedNum(4, 1 , Yaw  , 5);    
-    
-    
+    OLED_ShowSignedNum(2, 11, ax, 4);
+    OLED_ShowSignedNum(3, 11, ay, 4);
+    OLED_ShowSignedNum(4, 11, az, 4);
 
 };
 
@@ -92,15 +89,17 @@ void OLED_Show_0()
 
 void GET_MPU6050_info()
 {   
-//    MPU6050_DMP_Get_Data(&Pitch,&Roll,&Yaw);                //读取姿态信息(其中偏航角有飘移是正常现象)
-//    MPU_Get_Gyroscope(&gx,&gy,&gz);
-//    MPU_Get_Accelerometer(&ax,&ay,&az);
+
+
+    MPU6050_DMP_Get_Data(&Pitch,&Roll,&Yaw);                //读取姿态信息(其中偏航角有飘移是正常现象)
+    MPU_Get_Gyroscope(&gx,&gy,&gz);
+    MPU_Get_Accelerometer(&ax,&ay,&az);
 }
 
 
 void OLED_OLED_Clear()
 {
-    OLED_Clear();
+    OLED_Clear();    
 }
 
 
@@ -155,7 +154,12 @@ int main(void)
     DWT_Init();
     I2C2_Init();
     OLED_Init();
-//    MPU6050_Init();   
+    DWT_Delay_s(1);
+                                    OLED_ShowNum(1,1,1,1);
+    MPU6050_Init();
+                                    OLED_ShowNum(1,2,2,1);
+    MPU6050_DMP_Init();
+                                    OLED_ShowNum(1,3,3,1);
 
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
@@ -171,9 +175,9 @@ SCH_Init();                                                         //
 //--------------------------------------------------------------------
     
     
-    SCH_AddTask(GET_MPU6050_info    ,100    ,PRIORITY_MID);
-    SCH_AddTask(OLED_Show_0         ,100    ,PRIORITY_LOW);
-    SCH_AddTask(OLED_OLED_Clear     ,1000   ,PRIORITY_LOW);
+    SCH_AddTask(GET_MPU6050_info    ,10     ,PRIORITY_MID);
+    SCH_AddTask(OLED_Show_0         ,50    ,PRIORITY_LOW);
+    SCH_AddTask(OLED_OLED_Clear     ,500   ,PRIORITY_LOW);
 //    SCH_AddTask(Turn_PWM_SetCompare1_i  ,100    ,PRIORITY_LOW);
     
     
@@ -188,10 +192,7 @@ SCH_Start();                                                        //
     while (1)
     {
         
-        //DWT_Delay_s(1);
-        //MPU6050_DMP_Get_Data(&Pitch,&Roll,&Yaw);                //读取姿态信息(其中偏航角有飘移是正常现象)
-        //MPU_Get_Gyroscope(&gx,&gy,&gz);
-        //MPU_Get_Accelerometer(&ax,&ay,&az);
+        DWT_Delay_s(1);
         
         
     }

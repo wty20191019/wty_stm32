@@ -1,7 +1,7 @@
 #ifndef __I2C2_H
 #define __I2C2_H
 
-#define clock_frequency  400  //(kHz)时钟速度,标准速度（1-100kHz）,快速（101-400kHZ） 
+#define clock_frequency  200  //(kHz)时钟速度,标准速度（1-100kHz）,快速（101-400kHZ） 
 
 //===============================================
 //硬件 I2C2
