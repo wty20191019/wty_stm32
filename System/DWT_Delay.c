@@ -2,7 +2,7 @@
 #include "stm32f10x.h"
 
 // 初始化 DWT 用于 us 延时
-void DWT_Init(void)
+void DWT_Delay_Init(void)
 {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // 启用 DWT
     DWT->CYCCNT = 0;                               // 清零计数器

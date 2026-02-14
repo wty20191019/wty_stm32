@@ -48,9 +48,9 @@ uint8_t I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
             
             
             return 1;
-            break;    //   留着  别改  有玄学                  //跳出等待，不等了
+            //break;                     //跳出等待，不等了
         }
-    }
+    }  
     
     return 0;
     

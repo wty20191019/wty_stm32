@@ -71,7 +71,7 @@
 // DWT_Delay  阻塞延时        base  DWT
 //=============================================
 // 函数声明
-void DWT_Init(void);
+void DWT_Delay_Init(void);
 void DWT_Delay_us(uint32_t us);
 void DWT_Delay_ms(uint32_t ms);
 void DWT_Delay_s(uint32_t s);
