@@ -71,12 +71,8 @@ void OLED_Show_0()
     
     OLED_ShowNum(i*8,0,i,1,OLED_8X16);
     i++;
+    i = (i>9?0:i);
 
-    if(i>9)
-        {
-        i=0;
-        }
-        
         
     //OLED显示PWM测量值
 //OLED_ShowNum(1,1,IC_GetPWM1_Frequency,6,OLED_8X16);
@@ -95,9 +91,7 @@ void OLED_Show_0()
     //OLED显示mpu6050数据
     
     
-    OLED_ShowSignedNum(8*12, 14*1  , Pitch, 3,OLED_8X16);
-    OLED_ShowSignedNum(8*0, 14*2  , Roll , 3,OLED_8X16);
-    OLED_ShowSignedNum(8*8, 14*4-6  , Yaw  , 3,OLED_8X16);
+
     
     OLED_DrawLine(0,31,127,31);
     OLED_DrawLine(63,0,63,63);
@@ -106,9 +100,18 @@ void OLED_Show_0()
     y_p2     = 63*tan(Roll* PI / 180.0);
     Yaw_p   = 63+63*(Yaw   /180); 
     
-    OLED_DrawLine(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2  );
+    OLED_DrawLine(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2 );
+    
+//    OLED_DrawTriangle(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2 ,63,63,OLED_FILLED);
+//    OLED_DrawTriangle(0     ,y_p1-y_p2  ,0    ,63,63,63,OLED_FILLED);
+//    OLED_DrawTriangle(127     ,63  ,127    ,y_p1+y_p2 ,63,63,OLED_FILLED);
+    
     OLED_DrawLine(Yaw_p ,0          ,Yaw_p  ,63         );
-
+    
+    
+    OLED_ShowSignedNum(8*12, 14*1  , Pitch, 3,OLED_8X16);
+    OLED_ShowSignedNum(8*0, 14*2  , Roll , 3,OLED_8X16);
+    OLED_ShowSignedNum(8*8, 14*4-6  , Yaw  , 3,OLED_8X16);
 
     
 //    OLED_ShowSignedNum(33, 0  , gx, 5,OLED_8X16);
@@ -222,8 +225,8 @@ int main(void)
 //这里添加调度
 
 
-    SCH_AddTask(GET_MPU6050_info    ,10     ,PRIORITY_MID);
-    SCH_AddTask(OLED_Show_0         ,50    ,PRIORITY_LOW);
+    SCH_AddTask(GET_MPU6050_info    ,1     ,PRIORITY_MID);
+    SCH_AddTask(OLED_Show_0         ,20    ,PRIORITY_LOW);
 //    SCH_AddTask(OLED_OLED_Clear     ,500   ,PRIORITY_LOW);
 //    SCH_AddTask(Turn_PWM_SetCompare1_i  ,100    ,PRIORITY_LOW);
     
