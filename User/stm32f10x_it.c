@@ -23,7 +23,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
-#include "systick_scheduler.h"
+
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
   */
@@ -105,9 +105,10 @@ void UsageFault_Handler(void)
   * @param  None
   * @retval None
   */
-void SVC_Handler(void)
-{
-}
+  
+//void SVC_Handler(void)          //wty  FreeRTOS
+//{
+//}
 
 /**
   * @brief  This function handles Debug Monitor exception.
@@ -123,19 +124,21 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
-void PendSV_Handler(void)
-{
-}
+//void PendSV_Handler(void)               //wty  FreeRTOS
+//{
+//}
 
 /**
   * @brief  This function handles SysTick Handler.
   * @param  None
   * @retval None
   */
-void SysTick_Handler(void)
-{
-SCH_Tick();
-}
+//void SysTick_Handler(void)                    //wty  FreeRTOS
+//{
+
+////SCH_Tick();
+
+//}
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */

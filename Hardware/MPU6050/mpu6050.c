@@ -1,9 +1,15 @@
 #include "mpu6050.h"
 #include "I2C2.h" 
-#include "DWT_Delay.h"                  //Base    DWT
+
+//#include "FreeRTOS.h"                   //Base FreeRTOS  (SVC_Handler   PendSV_Handler   PendSV_Handler)
+//#include "task.h"                       //Base FreeRTOS  (SVC_Handler   PendSV_Handler   PendSV_Handler)
+//#include "queue.h"                      //Base FreeRTOS  (SVC_Handler   PendSV_Handler   PendSV_Handler)
+
+#include "DWT_Delay.h"
+
 #include "stm32f10x.h"                  // Device header
 
-#define delay_ms DWT_Delay_ms
+#define delay_ms(x) DWT_Delay_ms(x)
 #define I2C_TIMEOUT 10000
 
 
