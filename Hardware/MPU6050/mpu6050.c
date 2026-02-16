@@ -3,8 +3,9 @@
 #include "DWT_Delay.h"                  //Base    DWT
 #include "stm32f10x.h"                  // Device header
 
-#define delay_ms DWT_Delay_ms
-#define I2C_TIMEOUT 10000
+#define delay_ms(x)     DWT_Delay_ms(x)
+#define I2C_TIMEOUT     10000
+
 
 
 /**

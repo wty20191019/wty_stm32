@@ -59,6 +59,8 @@ void HardFault_Handler(void)
   while (1)
   {
   }
+
+
 }
 
 /**
@@ -105,9 +107,9 @@ void UsageFault_Handler(void)
   * @param  None
   * @retval None
   */
-void SVC_Handler(void)
-{
-}
+//void SVC_Handler(void) // 注释掉stm32f10x_it.c中的三个函数/* void SVC_Handler(void) {} *//* void PendSV_Handler(void) {} *//* void SysTick_Handler(void) {} */
+//{
+//}
 
 /**
   * @brief  This function handles Debug Monitor exception.
@@ -123,19 +125,19 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
-void PendSV_Handler(void)
-{
-}
+//void PendSV_Handler(void)    // 注释掉stm32f10x_it.c中的三个函数/* void SVC_Handler(void) {} *//* void PendSV_Handler(void) {} *//* void SysTick_Handler(void) {} */
+//{
+//}
 
 /**
   * @brief  This function handles SysTick Handler.
   * @param  None
   * @retval None
   */
-void SysTick_Handler(void)
-{
-SCH_Tick();
-}
+//void SysTick_Handler(void)          // 注释掉stm32f10x_it.c中的三个函数/* void SVC_Handler(void) {} *//* void PendSV_Handler(void) {} *//* void SysTick_Handler(void) {} */
+//{
+////SCH_Tick();
+//}
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */

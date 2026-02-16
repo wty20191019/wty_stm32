@@ -2,6 +2,26 @@
 #include "I2C2.h"
 
 
+
+void I2C_Interrupt_Priority_Config(void)
+{
+    NVIC_InitTypeDef NVIC_InitStructure;
+    
+    // I2C1事件中断优先级设置
+    NVIC_InitStructure.NVIC_IRQChannel = I2C1_EV_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 4;  // 优先级设为4（高于configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY）
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+    
+    // I2C1错误中断优先级设置
+    NVIC_InitStructure.NVIC_IRQChannel = I2C1_ER_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 4;
+    NVIC_Init(&NVIC_InitStructure);
+}
+
+
+
 void I2C2_Init(void)
 {
     /*开启时钟*/
@@ -27,8 +47,14 @@ void I2C2_Init(void)
     
     /*I2C使能*/
     I2C_Cmd(I2C2, ENABLE);                                                      //使能I2C2，开始运行
-
+    I2C_Interrupt_Priority_Config();
+    I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
+    
+    
 }
+
+
+
 
 
 //等待应答信号到来
