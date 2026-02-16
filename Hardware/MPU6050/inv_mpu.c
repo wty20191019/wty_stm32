@@ -33,14 +33,15 @@
 #include "dmpmap.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "MPU6050.h"
-#include "DWT_Delay.h"
+//#include "DWT_Delay.h"
+#include "systick_scheduler.h"          //Base    systick
 #include "I2C2.h" 
 
 
 #define   MPU6050               //定义我们使用的传感器为MPU6050
 
 //下面8个函数对接dmp库
-#define delay_ms    DWT_Delay_ms       //delay实现
+#define delay_ms(x)    SCH_Delay(x)       //delay实现
 #define get_ms      get_ms         //自己写一个
 #define i2c_write   mpu6050_write
 #define i2c_read    mpu6050_read

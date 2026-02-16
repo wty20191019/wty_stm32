@@ -38,7 +38,7 @@ void I2C2_Init(void)
 uint8_t I2C2_WaitEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
 {
     uint32_t Timeout ;                                       //给定超时计数时间
-    Timeout = 10000;
+    Timeout = 100;
     while (I2C_CheckEvent(I2Cx, I2C_EVENT) != SUCCESS)              //循环等待指定事件
     {
 

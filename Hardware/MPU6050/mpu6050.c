@@ -2,8 +2,11 @@
 #include "I2C2.h" 
 #include "DWT_Delay.h"                  //Base    DWT
 #include "stm32f10x.h"                  // Device header
+#include "systick_scheduler.h"          //Base    systick
 
-#define delay_ms DWT_Delay_ms
+
+//#define delay_ms DWT_Delay_ms
+#define delay_ms(x)    SCH_Delay(x)       //delay实现
 #define I2C_TIMEOUT 10000
 
 
