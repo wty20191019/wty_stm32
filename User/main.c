@@ -69,7 +69,7 @@ void OLED_Show_0(void *pvParameters)
 {
 
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = pdMS_TO_TICKS(50); //ms周期
+    const TickType_t xFrequency = pdMS_TO_TICKS(100); //ms周期
     xLastWakeTime = xTaskGetTickCount();                 // 获取当前tick计数
     
     
@@ -141,7 +141,7 @@ void OLED_Show_0(void *pvParameters)
 void GET_MPU6050_info(void *pvParameters)
 {   
     TickType_t xLastWakeTime;
-    const TickType_t xFrequency = pdMS_TO_TICKS(20); //ms周期
+    const TickType_t xFrequency = pdMS_TO_TICKS(100); //ms周期
     
     // 获取当前tick计数
     xLastWakeTime = xTaskGetTickCount();
