@@ -14,3 +14,14 @@ int16_t Encoder2_TIM4_Encoder_Get(void);
 
 
 #endif
+
+
+    
+            //OLED显示Encoder的计数
+            //    OLED_ShowSignedNum(3 , 1 ,Encoder1_TIM3_Encoder_Get(),6,OLED_8X16);
+            //    OLED_ShowSignedNum(3 , 9 ,Encoder2_TIM4_Encoder_Get(),6,OLED_8X16);
+
+
+
+
+

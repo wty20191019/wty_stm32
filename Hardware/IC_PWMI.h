@@ -22,3 +22,14 @@ uint16_t IC_GetPWM2_DutyCycle(void);
 
 
 #endif
+
+
+
+            //OLED显示PWM测量值
+            //OLED_ShowNum(1,1,IC_GetPWM1_Frequency,6,OLED_8X16);
+            //OLED_ShowNum(1,1,IC_GetPWM1_DutyCycle,6,OLED_8X16);
+            //OLED_ShowNum(1,1,IC_GetPWM2_Frequency,6,OLED_8X16);
+            //OLED_ShowNum(1,1,IC_GetPWM2_DutyCycle,6,OLED_8X16);
+            
+
+

@@ -27,11 +27,14 @@
 #define configTICK_RATE_HZ              ( ( TickType_t ) 1000 )             /* 系统节拍频率: 1000Hz (1ms) */
 #define configMAX_PRIORITIES            ( 8 )                               /* 最大任务优先级数 (0-7, 0为最低) */
 #define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 256 )          /* 空闲任务堆栈大小 (字) */
-#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 8 * 1024 ) )         /* 堆内存总大小: 4KB (STM32F103C8T6有20KB RAM) */
+#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 10 * 1024 ) )        /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
 #define configMAX_TASK_NAME_LEN         ( 16 )                              /* 任务名称最大长度 */
 #define configUSE_TRACE_FACILITY        0                                   /* 1: 启用可视化跟踪调试; 0: 禁用 (节省资源) */
 #define configUSE_16_BIT_TICKS          0                                   /* 1: 使用16位Tick计数器; 0: 使用32位Tick计数器 */
 #define configIDLE_SHOULD_YIELD         1                                   /* 1: 空闲任务主动让出CPU; 0: 不主动让出 */
+
+
+
 
 /* 协程相关配置 (FreeRTOS的轻量级任务, 现已不常用) */
 #define configUSE_CO_ROUTINES           0           /* 1: 启用协程; 0: 禁用 */
@@ -84,7 +87,10 @@
 #define configUSE_TASK_NOTIFICATIONS            1    /* 启用任务通知功能 */
 
 /* 递归互斥量 */
-#define configUSE_RECURSIVE_MUTEXES             0    /* 禁用递归互斥量以节省资源 */
+#define configUSE_RECURSIVE_MUTEXES             0   
+
+// 启用互斥量（信号量的一种）
+#define configUSE_MUTEXES                       0
 
 /* 计数信号量/队列 */
 #define configUSE_COUNTING_SEMAPHORES           1    /* 启用计数信号量 */
@@ -100,3 +106,6 @@
 
 
 #endif /* FREERTOS_CONFIG_H */
+
+
+
