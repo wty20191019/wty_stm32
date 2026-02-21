@@ -201,15 +201,13 @@ int main(void)
     SCH_Init();                         // systick_scheduler调度器
     DWT_Delay_Init();                   // DWT_Delay_Init
     I2C_QuickInit(I2C2, 400*1000);
-
-    OLED_Init();
-                                    OLED_ShowNum(0,1,1,1,OLED_8X16);OLED_Update();
-    DWT_Delay_s(1);
-    MPU6050_Init();                   
-                                    OLED_ShowNum(0,2,2,1,OLED_8X16);OLED_Update();
-    DWT_Delay_s(1);
-    MPU6050_DMP_Init();               
-                                    OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
+    
+    OLED_Init();                        OLED_ShowNum(0,1,1,1,OLED_8X16);OLED_Update();
+    
+    MPU6050_Init();                     OLED_ShowNum(0,2,2,1,OLED_8X16);OLED_Update();
+    
+    MPU6050_DMP_Init();                 OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
+    
 
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
