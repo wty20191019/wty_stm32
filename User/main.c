@@ -4,7 +4,6 @@
 
 
 #include "stm32f10x.h"                  //Device header
-#include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
 #include "math.h" 
 
@@ -12,6 +11,11 @@
 #include "task.h"                       //Base    FreeRTOS
 #include "queue.h"                      //Base    FreeRTOS
 #include "semphr.h"                     //Base    FreeRTOS
+
+#include "PID_system.h"
+#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
+#include "key.h"                        //Base    (PB1 )
+
 
 
 #include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
@@ -25,9 +29,7 @@
 
 
 //#include "PID_system.h"                 //base     
-//#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "LED.h"                        //Base    (PA12)
-//#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 
@@ -67,7 +69,8 @@ QueueHandle_t xPoseQueue;
 // 任务句柄
 TaskHandle_t xMPUTaskHandle;
 TaskHandle_t xOLEDTaskHandle;
-TaskHandle_t PC13_led;
+TaskHandle_t xPC13_ledaskHandle;
+TaskHandle_t xPIDTaskHandle;
 
 //I2C2互斥量
 SemaphoreHandle_t xI2C2Mutex;  
@@ -76,26 +79,74 @@ SemaphoreHandle_t xI2C2Mutex;
 
 //=================================================================================================//////
 
+void Test_PID(void *pvParameters)
+{
+    float Pitch, Roll, Yaw;
+    Pose_t recv_pose;
+    const TickType_t xFrequency = pdMS_TO_TICKS(100);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);GPIO_InitTypeDef GPIO_InitStructure;GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+    TIM_SetCompare1(TIM2,75);
+    
+    // 创建PID控制器实例
+    PID_Controller* Turn_pid = PID_Create_Instance(
+        -0.555f,        // Kp：比例系数  
+        1.0f,           // Ki：积分系数
+        0.055f,          // Kd：微分系数
+        
+        
+        90.0f,           // 积分限幅：最大积分累积值
+        45.0f,          // 积分分离阈值
+        
+        
+        -50.0f,         // 输出下限
+        50.0f,          // 输出上限
+        PID_MODE_POSITION  // 位置式PID
+    );
+    
+    
+    if (Turn_pid == NULL) {
+        // 无法创建PID控制器，删除任务
+        vTaskDelete(NULL);
+        return;
+    }
+    
+    // 设置目标值
+    PID_Set_Target(Turn_pid, 0.0f);  
+    
+    // 启用抗饱和功能
+    PID_Set_Anti_Windup(Turn_pid, 0);
+    
+    // 设置微分滤波系数（0.2表示中等滤波强度）
+    PID_Set_Derivative_Filter(Turn_pid, 1.0f);
+
+    while(1)
+    {   
+        if(xQueueReceive(xPoseQueue, &recv_pose, 0) == pdPASS)
+        {
+            Pitch = recv_pose.Pitch;
+            Roll = recv_pose.Roll;
+            Yaw = recv_pose.Yaw ;
+        }
+        TIM_SetCompare1(TIM2,(75+PID_Update(Turn_pid,Roll,0.1f)));
+        if(GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0){GPIO_SetBits(GPIOC, GPIO_Pin_13);}else{GPIO_ResetBits(GPIOC, GPIO_Pin_13);}
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    }
+}
+
+
 
 void Test_PC13_ledTask(void *pvParameters)
 {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);GPIO_InitTypeDef GPIO_InitStructure;GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;GPIO_Init(GPIOC, &GPIO_InitStructure);
     
     while(1)
     {
-        if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0)
-        {
-        GPIO_SetBits(GPIOC, GPIO_Pin_13);
-        }
-        else
-        {
-        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-        }
+        
+        if(GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0){GPIO_SetBits(GPIOC, GPIO_Pin_13);}else{GPIO_ResetBits(GPIOC, GPIO_Pin_13);}
+        
         vTaskDelay(pdMS_TO_TICKS(20));
     }
 }
@@ -237,6 +288,11 @@ int main(void)
     
     MPU6050_DMP_Init();                 OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
     
+    PID_System_Init();                  OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
+    
+    TIM2_PWM_Init();                    OLED_ShowNum(0,3,5,1,OLED_8X16);OLED_Update();
+    
+    Key_Init();                         OLED_ShowNum(0,3,6,1,OLED_8X16);OLED_Update();
 
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
@@ -272,8 +328,11 @@ int main(void)
     xTaskCreate(MPU6050_PoseTask, "MPUTask", 256, NULL, 2, &xMPUTaskHandle);
     
     // PC3_led 任务
-    xTaskCreate(Test_PC13_ledTask, "led_PC13", 256, NULL, 1, &PC13_led);
+    //xTaskCreate(Test_PC13_ledTask, "led_PC13", 256, NULL, 1, &xPC13_ledaskHandle);
     
+    // Test_PID 任务
+    xTaskCreate(Test_PID, "Test_PID", 256, NULL, 1, &xPIDTaskHandle);
+
 
 
     
