@@ -1,70 +1,68 @@
 #  每日工作流程
-
-##### 拉取更新
+### 拉取更新
 ```git
 git pull
 ```
-
-
-
-
-##### 查看状态
+### 查看状态
 ```git
 git status
 ```
-
-##### 添加文件____(`.`为所有文件，或`文件名`)
+### 添加文件____(`.`为所有文件，或`文件名`)
 ```git
 git add .
 ```
-
-##### 查看状态
-```git
-git status
-```
-
-##### 提交变更
+### 提交变更
 ```git
 git commit -m "    "
 ```
-
-##### 推送更新   (`git push origin main --force` 强制推送到远程仓库)
+### 推送更新 main 分支   (`git push origin main --force` 强制推送到远程仓库)
 ```git
 git push origin main
 ```
-
-##### 拉取更新
+### 推送更新_所有_分支  
+```git
+git push --all origin
+```
+### 拉取更新
 ```git
 git pull
 ```
-
+---
+---
 ---
 
 #  分支管理
 
-##### ​查看分支图​
+### ​查看分支图​
 ```git
 git log --oneline --graph --decorate --all
 ```
-##### ​查看分支
+### ​查看分支
 ```git
-git branch
+git branch -a
 ```
-##### ​切换到分支____`branch-name`
+### ​切换到分支`branch_name`_(`git checkout branch_name`)_
 ```git
-git checkout branch-name
+git checkout
 ```
-##### ​合并分支____(将指定分支`branch-name`的更改合并到当前分支)
+### ​切换到 *远程* 分支`branch_name`_
+创建本地同名分支-> 自动跟踪远程分支 origin/分支名-> 切换到该分支
+```git
+git checkout -b branch_name origin/branch_name
+```
+### ​合并分支_(将指定分支`branch-name`的更改合并到当前分支)_
 ```git
 git merge branch-name
 ```
-##### ​删除分支`branch-name`
+### ​删除分支`branch_name` _(`git branch -d branch_name`)(强制删除分支`git branch -D branch_name`)_
 ```git
-git branch -d branch-name
+git branch -d 
 ```
-##### ​创建新分支`new-branch`
+
+
+### ​创建新分支`new_branch`_(`git branch new_branch`)_
 ```git
-git branch new-branch
+git branch 
 ```
 * 分支命名规范
   * 功能分支 `feature/`       | `feature/user-login` `feature/issue-123-add-button` 
@@ -72,50 +70,20 @@ git branch new-branch
   * 热修分支  `hotfix/`        | `hotfix/critical-security-patch`                    
   * 发布分支 `release/`       | `release/v2.1.0` `release/2025-09-18`               
   * 文档分支  `docs/`          | `docs/update-api-guide`                            
-  * 优化分支 `chore/`         | `chore/improve-build-speed`                         
+  * 优化分支 `chore/`         | `chore/improve-build-speed`                    
+---
+---
 ---
 
-#  **通过 .gitignore 忽略不需要管理的文件
-创建 `.gitignore` 文件：
-```
-# 忽略下载的图片数据
-nmc_radar_downloader/
-nmc_weatherchartWithRadar_downloader/
-
-# 忽略系统文件
-.DS_Store
-Thumbs.db
-```
-
 #  分支内管理
-
-## `reset` 将当前 `HEAD` 重置到指定状态                                             
+## `reset` 将当前 `HEAD` 重置到指定状态                                      
 `git reset HEAD~1` 回退到上一个提交（保留修改）
-
 `git reset --hard HEAD~1` 强制回退并丢弃修改
-
 ## `revert`创建一个新的提交来撤销指定提交的更改（安全操作）
 `git revert commit-hash`  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+---
+---
+---
 # Git 常用命令速查表
 
 
@@ -129,7 +97,7 @@ Thumbs.db
 | `rm`            | 从**工作区**和**暂存区**中删除文件                                         | `git rm filename.txt`                                                                     |
 | `status`        | 显示**工作区**和**暂存区**的状态                                         | `git status`                                                                              |
 | `commit`        | 将**暂存区**的更改提交到本地仓库                                         | `git commit -m "提交说明"`                                                                 |
-| `branch`        | 列出、创建或删除分支                                                     | `git branch` 查看分支；`git branch new-branch` 创建新分支；`git branch -d branch-name` 删除分支 |
+| `branch`        | 列出、创建或删除分支                                                     | `git branch` 查看分支；`git branch new_branch` 创建新分支；`git branch -d branch-name` 删除分支 |
 | `checkout`      | 切换分支或恢复文件                                                       | `git checkout branch-name` 切换分支；`git checkout -- filename.txt` 撤销对文件的修改 ； 使用 git checkout (临时查看旧状态,例如`git checkout ece7fda`)       |
 | `switch`        | 切换分支 (Git 2.23+)                                                     | `git switch branch-name`                                                                  |
 | `merge`         | 将指定分支的更改合并到当前分支                                             | `git merge branch-name`                                                                   |
@@ -148,7 +116,9 @@ Thumbs.db
 
 
 
------
+---
+---
+---
 
 
 
@@ -277,64 +247,13 @@ flowchart TD
 
 
 
-## 要使用 Git 管理 GitHub 上的项目链接，请按照以下步骤操作：
 
-### 1. **克隆仓库到本地**
-```bash
-git clone https://github.com/wty20191019/NMC_downloader.git
-cd NMC_downloader
-```
----
-### 2. **日常管理操作**
 
-| 操作 | 命令 | 说明 |
-|------|------|------|
-| **查看分支** | `git branch` |  |
-| **​查看分支图​** | `git log --oneline --graph --decorate --all` |  |
-| **创建新分支**| `git branch new-branch ` | new-branch 为分支名 |
-| **删除分支**| `git branch -d branch-name` | branch-name 为分支名 |
-| **强制删除分支**| `git branch -D branch-name` | branch-name 为分支名 |
-| **切换分支** | `git checkout branch-name` | branch-name 为分支名 |
-| **将指定分支的更改合并到当前分支** | `git merge branch-name` | branch-name 指定分支名 |
-| **__** | `__` |  |
-| **查看状态** | `git status` | 查看文件修改状态 |
-| **添加文件** | `git add ` | `git add .`(add all) 将修改加入暂存区 |
-| **提交变更** | `git commit -m "描述信息"` | 提交变更到本地仓库 |
-| **推送更新** | `git push origin main` | 上传到 GitHub 仓库 |
-| **拉取更新** | `git pull` | 获取远程最新代码 |
+
+
 
 ---
-
-
-### 3. **管理项目链接**
-对于项目中的链接（如气象数据源）：
-```bash
-# 查看文件历史（含链接变更）
-git log -- nmc_downloader/nmc_radar_downloader.py
-
-# 恢复特定版本的链接
-git checkout <commit-id> -- path/to/file.py
-```
-
-### 4. **分支管理**
-```bash
-git branch feature/new-download-source  # 创建新分支
-git checkout feature/new-download-source  # 切换分支
-# 修改链接后提交...
-git push -u origin feature/new-download-source
-```
-
-| 分支类型   | 命名策略（前缀） | 示例                                        |
-| :--------- | :--------------- | :------------------------------------------ |
-| **功能分支** | `feature/`       | `feature/user-login` `feature/issue-123-add-button` |
-| **修复分支** | `bugfix/` 或 `fix/` | `bugfix/login-error` `fix/456-header-overlap`       |
-| **热修分支** | `hotfix/`        | `hotfix/critical-security-patch`                    |
-| **发布分支** | `release/`       | `release/v2.1.0` `release/2025-09-18`               |
-| **文档分支** | `docs/`          | `docs/update-api-guide`                            |
-| **优化分支** | `chore/`         | `chore/improve-build-speed`                         |
-
 ---
-
 ---
 
 # Git的垃圾回收
@@ -354,6 +273,8 @@ git push -u origin feature/new-download-source
 `git gc --no-prune` 运行垃圾回收但不删除任何松散对象
 
 
+---
+---
 ---
 
 
@@ -395,6 +316,8 @@ temp/
 
 
 ---
+---
+---
 
 
-### 当你执行 `git config --global https.proxy socks5://127.0.0.1:7890`Git 会通过 127.0.0.1:7890 代理服务器来连接 GitHub。
+# 当你执行 `git config --global https.proxy socks5://127.0.0.1:7890`Git 会通过 127.0.0.1:7890 代理服务器来连接 GitHub。
