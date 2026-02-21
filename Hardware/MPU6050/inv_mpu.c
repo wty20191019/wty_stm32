@@ -19,9 +19,7 @@
  *
  */
 
-
-
-
+#include "inv_mpu.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -32,16 +30,19 @@
 #include "dmpKey.h"
 #include "dmpmap.h"
 #include "inv_mpu_dmp_motion_driver.h"
+
 #include "MPU6050.h"
+
 #include "DWT_Delay.h"
-#include "I2C2.h" 
+
+#include "hardware_I2C.h"  
 
 
 #define   MPU6050               //定义我们使用的传感器为MPU6050
 
 //下面8个函数对接dmp库
 #define delay_ms    DWT_Delay_ms       //delay实现
-#define get_ms      get_ms         //自己写一个
+#define get_ms      get_ms             //自己写一个
 #define i2c_write   mpu6050_write
 #define i2c_read    mpu6050_read
 #define labs        labs           //stm32自带
@@ -2887,7 +2888,7 @@ void get_ms(unsigned long *time){}
 //    其他,失败     
 uint8_t MPU6050_DMP_Init(void)
 {
-     I2C2_Init();                                    //初始化IIC总线
+     //I2C2_Init();                                    //初始化IIC总线
                                                     
      if(!mpu_init())                                                               //mpu初始化
      {     

@@ -69,16 +69,9 @@
   */
 
 
- #include "stm32f10x.h"
+
+
 #include "OLED.h"
-#include <string.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "I2C2.h"
-
-
-
 /*全局变量*********************/
 
 /**
@@ -90,7 +83,7 @@
 uint8_t OLED_DisplayBuf[8][128];
 
 #define OLED_ADDRESS        0x78        //MPU6050的I2C从机地址
-#define I2C_TIMEOUT         100
+
 
 /*********************全局变量*/
 
@@ -224,28 +217,15 @@ uint8_t OLED_DisplayBuf[8][128];
   */
 void OLED_WriteCommand(uint8_t Command)
 {
-//    OLED_I2C_Start();                //I2C起始
+//    OLED_I2C_Start();               //I2C起始
 //    OLED_I2C_SendByte(0x78);        //发送OLED的I2C从机地址
 //    OLED_I2C_SendByte(0x00);        //控制字节，给0x00，表示即将写命令
-//    OLED_I2C_SendByte(Command);        //写入指定的命令
+//    OLED_I2C_SendByte(Command);     //写入指定的命令
 //    OLED_I2C_Stop();                //I2C终止
-
-    I2C_GenerateSTART(I2C2, ENABLE);                                    // 使用硬件I2C2发送起始条件
-    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);                 // 等待事件：主机模式已选择 (EV5)
-    
-    I2C_Send7bitAddress(I2C2, OLED_ADDRESS, I2C_Direction_Transmitter); // 发送OLED从机地址（写方向）
-    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED);   // 等待事件：发送器模式已选择 (EV6)
-    
-    I2C_SendData(I2C2, 0x00);                                           // 发送控制字节：0x00 表示后续是命令
-    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTING);           // 等待事件：字节正在传输 (EV8)
-    
-    I2C_SendData(I2C2, Command);                                        // 发送命令字节
-    I2C2_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED);            // 等待事件：字节传输完成 (EV8_2)
-    
-    I2C_GenerateSTOP(I2C2, ENABLE);                                     // 生成停止条件
-    
-
+I2C_WriteByte(I2C2,OLED_ADDRESS,0x00,Command);
 }
+
+
 
 /**
   * 函    数：OLED写数据
@@ -267,89 +247,7 @@ void OLED_WriteData(uint8_t *Data, uint8_t Count)
 //    }
 //    OLED_I2C_Stop();                //I2C终止
 
-uint8_t i; // 循环变量
-uint32_t timeout; // 超时计数器
-
-// 1. 发送起始信号
-I2C_GenerateSTART(I2C2, ENABLE);
-
-// 等待起始信号发送成功，增加超时处理
-timeout = I2C_TIMEOUT;
-while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT))
-{
-    if((timeout--) == 0) 
-    {
-        I2C_GenerateSTOP(I2C2, ENABLE);
-        return;
-    }
-}
-
-// 2. 发送从机地址（OLED地址）和传输方向（写）
-I2C_Send7bitAddress(I2C2, OLED_ADDRESS, I2C_Direction_Transmitter);
-
-// 等待地址发送成功并收到ACK，增加超时处理
-timeout = I2C_TIMEOUT;
-while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-{
-    if((timeout--) == 0) 
-    {
-        I2C_GenerateSTOP(I2C2, ENABLE);
-        return;
-    }
-}
-
-// 3. 发送控制字节（0x40表示写数据模式）
-I2C_SendData(I2C2, 0x40);
-
-// 等待控制字节发送完成，增加超时处理
-timeout = I2C_TIMEOUT;
-while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-{
-    if((timeout--) == 0) 
-    {
-        I2C_GenerateSTOP(I2C2, ENABLE);
-        return;
-    }
-}
-
-// 4. 循环发送Count个数据字节
-for(i = 0; i < Count; i++)
-{
-    // 发送当前数据字节
-    I2C_SendData(I2C2, Data[i]);
-    
-    // 如果不是最后一个字节，等待EV8事件（正在传输）
-    if(i < Count - 1)
-    {
-        // EV8：TxE=1, BTf=0，表示可以发送下一个字节
-        timeout = I2C_TIMEOUT;
-        while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-        {
-            if((timeout--) == 0) 
-            {
-                I2C_GenerateSTOP(I2C2, ENABLE);
-                return;
-            }
-        }
-    }
-    // 如果是最后一个字节，等待EV8_2事件（传输完成）
-    else
-    {
-        // EV8_2：TxE=1, BTf=1，表示最后一个字节已传输完成
-        timeout = I2C_TIMEOUT;
-        while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-        {
-            if((timeout--) == 0) 
-            {
-                I2C_GenerateSTOP(I2C2, ENABLE);
-                return;
-            }
-        }
-    }
-}
-
-// 5. 发送停止信号
-I2C_GenerateSTOP(I2C2, ENABLE);
+I2C_WriteMulti(I2C2,OLED_ADDRESS,0x40,Data,Count);
 
 }
 
@@ -366,7 +264,7 @@ I2C_GenerateSTOP(I2C2, ENABLE);
   */
 void OLED_Init(void)
 {
-    I2C2_Init();                //先调用底层的端口初始化
+    //I2C2_Init();                //先调用底层的端口初始化
     
     /*写入一系列的命令，对OLED进行初始化配置*/
     OLED_WriteCommand(0xAE);    //设置显示开启/关闭，0xAE关闭，0xAF开启

@@ -1,7 +1,7 @@
 #ifndef _MPU6050_H_
 #define _MPU6050_H_
 #include "sys.h"
-#include "MPU6050_I2C.h"
+
 
 #define     MPU_SAMPLE_RATE_REG 0X19        //采样频率分频器
 #define     MPU_CFG_REG         0X1A        //配置寄存器

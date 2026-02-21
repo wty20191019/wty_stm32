@@ -1,10 +1,10 @@
 #include "mpu6050.h"
-#include "I2C2.h" 
 #include "DWT_Delay.h"                  //Base    DWT
-#include "stm32f10x.h"                  // Device header
+#include "hardware_I2C.h"
 
 #define delay_ms DWT_Delay_ms
-#define I2C_TIMEOUT 10000
+
+
 
 
 /**
@@ -19,98 +19,9 @@ uint8_t mpu6050_write(uint8_t addr, uint8_t reg, uint8_t len, uint8_t* buf)
 {
     addr=addr<<1;
     
-    uint32_t timeout;
-    uint8_t i;
-    int8_t ret = 0;
-
-    // 1. 发送起始条件
-    I2C_GenerateSTART(I2C2, ENABLE);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT))
-    {
-        if((timeout--) == 0) 
-        {
-            ret = -1;
-            goto error;
-        }
-    }
-
-    // 2. 发送器件地址（写）
-    I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Transmitter);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-    {
-        if((timeout--) == 0) 
-        {
-            ret = -2;
-            goto error;
-        }
-    }
-
-    // 3. 发送寄存器地址
-    I2C_SendData(I2C2, reg);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-    {
-        if((timeout--) == 0) 
-        {
-            ret = -3;
-            goto error;
-        }
-    }
-
-    // 4. 循环发送数据
-    for(i = 0; i < len; i++)
-    {
-        I2C_SendData(I2C2, buf[i]);
-        timeout = I2C_TIMEOUT;
-
-        if(i == (len - 1))
-        {
-            // 最后一个字节，等待传输完成
-            while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-            {
-                if((timeout--) == 0) 
-                {
-                    ret = -4;
-                    goto error;
-                }
-            }
-        }
-        else
-        {
-            // 非最后一个字节，等待进入"正在传输"状态
-            while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-            {
-                if((timeout--) == 0) 
-                {
-                    ret = -5;
-                    goto error;
-                }
-            }
-        }
-    }
-
-    // 5. 发送停止条件
-    I2C_GenerateSTOP(I2C2, ENABLE);
-
-    // 可选：等待总线空闲
-    timeout = I2C_TIMEOUT;
-    while(I2C_GetFlagStatus(I2C2, I2C_FLAG_BUSY))
-    {
-        if((timeout--) == 0) 
-        {
-            ret = -6;
-            goto error;
-        }
-    }
-
-    return 0; // 成功
-
-error:
-    // 发生错误时发送停止条件并返回错误码
-    I2C_GenerateSTOP(I2C2, ENABLE);
-    return ret;
+    I2C_WriteMulti(I2C2,addr,reg,buf,len);
+    
+    return 0;
 }
 
 
@@ -124,123 +35,16 @@ error:
   * @param  buf:  数据缓冲区指针
   * @retval 0: 成功, 其他: 失败 (错误码)
   */
-uint8_t mpu6050_read(uint8_t addr, uint8_t reg, uint8_t len, uint8_t *buf)
+uint8_t mpu6050_read(   uint8_t addr,
+                        uint8_t reg,
+                        uint8_t len,
+                        uint8_t *buf)
 {
     addr=addr<<1;
+    I2C_ReadMulti(I2C2,addr,reg,buf,len);
     
-    uint32_t timeout;
-    uint8_t i;
-    int8_t ret = 0;
-
-    // 1. 发送起始条件（写模式）
-    I2C_GenerateSTART(I2C2, ENABLE);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -1;
-            goto error;
-        }
-    }
+    return 0;
     
-    
-
-    // 2. 发送器件地址（写模式）
-    I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Transmitter);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -2;
-            goto error;
-        }
-    }
-
-    // 3. 发送寄存器地址
-    I2C_SendData(I2C2, reg);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -3;
-            goto error;
-        }
-    }
-    
-    // 4. 重新发送起始条件（读模式）
-    I2C_GenerateSTART(I2C2, ENABLE);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -4;
-            goto error;
-        }
-    }
-    
-    // 5. 发送器件地址（读模式）
-    I2C_Send7bitAddress(I2C2, addr, I2C_Direction_Receiver);
-    timeout = I2C_TIMEOUT;
-    while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -5;
-            goto error;
-        }
-    }
-    
-    // 6. 读取数据
-    for(i = 0; i < len; i++)
-    {
-        if(i == (len - 1))
-        {
-            // 最后一个字节，禁用ACK并生成停止条件
-            I2C_AcknowledgeConfig(I2C2, DISABLE);
-            I2C_GenerateSTOP(I2C2, ENABLE);
-        }
-        
-        // 等待接收数据
-        timeout = I2C_TIMEOUT;
-        while(!I2C_CheckEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED))
-        {
-            if((timeout--) == 0)
-            {
-                ret = -6;
-                I2C_AcknowledgeConfig(I2C2, ENABLE); // 恢复ACK使能
-                goto error;
-            }
-        }
-        
-        // 读取数据
-        buf[i] = I2C_ReceiveData(I2C2);
-    }
-    
-    // 7. 重新使能ACK，为后续通信做准备
-    I2C_AcknowledgeConfig(I2C2, ENABLE);
-    
-    // 8. 等待总线空闲
-    timeout = I2C_TIMEOUT;
-    while(I2C_GetFlagStatus(I2C2, I2C_FLAG_BUSY))
-    {
-        if((timeout--) == 0)
-        {
-            ret = -7;
-            goto error;
-        }
-    }
-    
-    return 0; // 读操作成功
-
-error:
-    // 发生错误时发送停止条件
-    I2C_GenerateSTOP(I2C2, ENABLE);
-    I2C_AcknowledgeConfig(I2C2, ENABLE); // 确保ACK重新使能
-    return ret;
 }
 
 
@@ -259,6 +63,7 @@ uint8_t   mpu6050_read_reg (uint8_t reg)
    mpu6050_read(MPU_ADDR,reg,1,&dat);
       return dat;
 }
+
 
 //设置MPU6050陀螺仪传感器满量程范围
 //fsr:0,±250dps;1,±500dps;2,±1000dps;3,±2000dps
@@ -311,7 +116,7 @@ uint8_t MPU_Set_Rate(u16 rate)
 void MPU6050_Init(void)
 { 
     uint8_t res; 
-    I2C2_Init();                                    //初始化IIC总线
+//    I2C2_Init();                                    //初始化IIC总线
     mpu6050_write_reg(PWR_MGMT_1,0X80);             //复位MPU6050
     delay_ms(100);
     mpu6050_write_reg(PWR_MGMT_1,0X00);             //唤醒MPU6050 

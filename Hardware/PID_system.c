@@ -1,6 +1,5 @@
-#include "stm32f10x.h"
 #include "PID_system.h"
-#include <string.h>
+
 
 static PID_Controller pid_controllers[MAX_PID_CONTROLLERS];
 static uint8_t pid_count = 0;

@@ -8,7 +8,7 @@
 #include "DWT_Delay.h"                  //Base    DWT
 #include "math.h" 
 
-#include "I2C2.h"                       //Base    (PB11) (PB10)   I2C2.h
+#include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
 
     #include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h         OLED_2           //--no-multibyte-chars
     
@@ -200,13 +200,15 @@ int main(void)
 
     SCH_Init();                         // systick_scheduler调度器
     DWT_Delay_Init();                   // DWT_Delay_Init
-    I2C2_Init();
+    I2C_QuickInit(I2C2, 400*1000);
+
     OLED_Init();
-    DWT_Delay_s(1);
                                     OLED_ShowNum(0,1,1,1,OLED_8X16);OLED_Update();
-    MPU6050_Init();                   // MPU6050_Init    包含 I2C2_Init
+    DWT_Delay_s(1);
+    MPU6050_Init();                   
                                     OLED_ShowNum(0,2,2,1,OLED_8X16);OLED_Update();
-    MPU6050_DMP_Init();               // MPU6050_DMP_Init    包含 I2C2_Init
+    DWT_Delay_s(1);
+    MPU6050_DMP_Init();               
                                     OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
 
 //    TIM2_PWM_Init();
@@ -225,7 +227,7 @@ int main(void)
 //这里添加调度
 
 
-    SCH_AddTask(GET_MPU6050_info    ,1     ,PRIORITY_MID);
+    SCH_AddTask(GET_MPU6050_info    ,2     ,PRIORITY_MID);
     SCH_AddTask(OLED_Show_0         ,20    ,PRIORITY_LOW);
 //    SCH_AddTask(OLED_OLED_Clear     ,500   ,PRIORITY_LOW);
 //    SCH_AddTask(Turn_PWM_SetCompare1_i  ,100    ,PRIORITY_LOW);

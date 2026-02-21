@@ -1,4 +1,4 @@
-#include "stm32f10x.h"                  // Device header
+#include "IC_PWMI.h"                  // Device header
 
 //===============================================================
 //Base   TIM3_CH1  And  TIM4_CH1

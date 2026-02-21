@@ -1,6 +1,9 @@
 #ifndef __PID_SYSTEM_
 #define __PID_SYSTEM_
 
+#include "stm32f10x.h"
+#include <string.h>
+
 #define PID_UPDATE_PERIOD  500       // ms
 #define MAX_PID_CONTROLLERS 4      // 系统中支持的最大PID控制器数量
 

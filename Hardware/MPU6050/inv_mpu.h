@@ -17,10 +17,17 @@
  *                  MPU9150 (or MPU6050 w/ AK8975 on the auxiliary bus)
  *                  MPU9250 (or MPU6500 w/ AK8963 on the auxiliary bus)
  */
-#include "stm32f10x.h"                  // Device header
+
+
 
 #ifndef _INV_MPU_H_
 #define _INV_MPU_H_
+
+#include "stm32f10x.h"                  // Device header
+
+
+
+
 
 #define DEFAULT_MPU_HZ  (100)//100HZ
 #define INV_X_GYRO      (0x40)

@@ -1,7 +1,7 @@
 #ifndef __IC_H
 #define __IC_H
 
-
+#include "stm32f10x.h"                  // Device header
 
 //===============================================================
 //Base   TIM3_CH1(PA6)  And  TIM4_CH1(PB6)

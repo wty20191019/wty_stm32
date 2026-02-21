@@ -3,6 +3,15 @@
 
 #include <stdint.h>
 #include "OLED_Data.h"
+#include "stm32f10x.h"
+#include <string.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+//#include "I2C2.h"
+#include "hardware_I2C.h"   
+  
 
 /*参数宏定义*********************/
 

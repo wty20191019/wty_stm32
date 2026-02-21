@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2</IncludePath>
+              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -727,16 +727,6 @@
               <FilePath>.\Hardware\Encoder.h</FilePath>
             </File>
             <File>
-              <FileName>I2C2.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\I2C2.h</FilePath>
-            </File>
-            <File>
-              <FileName>I2C2.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\I2C2.c</FilePath>
-            </File>
-            <File>
               <FileName>PID_system.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\PID_system.c</FilePath>
@@ -749,7 +739,22 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>mpu6050dmp</GroupName>
+          <GroupName>hardware/hardware_I2C</GroupName>
+          <Files>
+            <File>
+              <FileName>hardware_I2C.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\hardware_I2C\hardware_I2C.c</FilePath>
+            </File>
+            <File>
+              <FileName>hardware_I2C.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\hardware_I2C\hardware_I2C.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>hardware/mpu6050dmp</GroupName>
           <Files>
             <File>
               <FileName>dmpKey.h</FileName>
@@ -791,20 +796,10 @@
               <FileType>5</FileType>
               <FilePath>.\Hardware\MPU6050\mpu6050.h</FilePath>
             </File>
-            <File>
-              <FileName>MPU6050_I2C.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\MPU6050\MPU6050_I2C.c</FilePath>
-            </File>
-            <File>
-              <FileName>MPU6050_I2C.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\MPU6050\MPU6050_I2C.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>OLED_2</GroupName>
+          <GroupName>hardware/OLED_2</GroupName>
           <Files>
             <File>
               <FileName>OLED.c</FileName>

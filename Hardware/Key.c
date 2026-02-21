@@ -1,4 +1,4 @@
-#include "stm32f10x.h"                  // Device header
+#include "key.h"                  // Device header
 
 
 // 常量定义
