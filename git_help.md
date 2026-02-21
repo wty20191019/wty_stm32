@@ -1,5 +1,6 @@
 #  每日工作流程
-### 拉取更新
+### 拉取更新  ( 即`git fetch`+`git merge`)
+(`git fetch --prune` 获取远程最新数据，同时删除本地已不存在的远程分支引用)
 ```git
 git pull
 ```
