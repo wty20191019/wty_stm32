@@ -50,9 +50,9 @@ git checkout
 ```git
 git checkout -b branch_name origin/branch_name
 ```
-### ​合并分支_(将指定分支`branch-name`的更改合并到当前分支)_
+### ​合并分支_(`git merge branch_name`将指定分支`branch_name`的更改合并到当前分支)_
 ```git
-git merge branch-name
+git merge 
 ```
 ### ​删除分支`branch_name` _(`git branch -d branch_name`)(强制删除分支`git branch -D branch_name`)_
 ```git
