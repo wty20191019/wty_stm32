@@ -2,27 +2,23 @@
 
 ## 基于标准库(有修改)的stm32f103c8t6开发板的外设驱动，包含以下模块：
 
-### Flash   :   26.3KB / 64KB   |   41%
+### Flash   :   30.30KB / 64KB
 
-### RAM     :   1.82KB / 20 KB  |    9%
+### RAM     :   2.82KB / 20 KB
 
 ```c
 
 
 
-
-//===================================================================================================
-//#include
-//===================================================================================================
-
-
 #include "stm32f10x.h"                  // Device header
 #include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
+#include "math.h" 
 
-#include "I2C2.h"                       //Base    (PB11) (PB10)   I2C2.h
+#include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
 
-    #include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h
+    #include "OLED.h"                       //Base    (PB11) (PB10)   I2C2.h         OLED_2           //--no-multibyte-chars
+    
     
     //====mpu6050dmp====//                  
     #include "mpu6050.h"                    //Base    (PB11) (PB10)   I2C2.h    inv_mpu.h
@@ -39,10 +35,6 @@
 
 
 
-//====================================================================================
-//弃用
-//#include "MyI2C.h"                      //弃用  Base   (PB11) (PB10)   DWT_Delay.h     用  硬件I2C2   替代
-//#include "Delay.h"                      //弃用  Base   systick与systick_scheduler冲突  用  DWT_Delay  替代
 
 
 

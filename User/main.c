@@ -28,10 +28,6 @@
 
 
 
-//====================================================================================
-//弃用
-//#include "MyI2C.h"                      //弃用  Base   (PB11) (PB10)   DWT_Delay.h     用  硬件I2C2   替代
-//#include "Delay.h"                      //弃用  Base   systick与systick_scheduler冲突  用  DWT_Delay  替代
 
 
 
