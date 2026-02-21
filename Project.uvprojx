@@ -652,16 +652,6 @@
           <GroupName>System</GroupName>
           <Files>
             <File>
-              <FileName>systick_scheduler.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\systick_scheduler.h</FilePath>
-            </File>
-            <File>
-              <FileName>systick_scheduler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\systick_scheduler.c</FilePath>
-            </File>
-            <File>
               <FileName>DWT_Delay.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\System\DWT_Delay.h</FilePath>

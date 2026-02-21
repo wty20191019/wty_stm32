@@ -90,7 +90,7 @@
 #define configUSE_RECURSIVE_MUTEXES             0   
 
 // 启用互斥量（信号量的一种）
-#define configUSE_MUTEXES                       0
+#define configUSE_MUTEXES                       1
 
 /* 计数信号量/队列 */
 #define configUSE_COUNTING_SEMAPHORES           1    /* 启用计数信号量 */
