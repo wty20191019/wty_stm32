@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\FreeRTOS;.\FreeRTOS\inc;.\FreeRTOS\port;.\FreeRTOS\src</IncludePath>
+              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\FreeRTOS;.\FreeRTOS\inc;.\FreeRTOS\port;.\FreeRTOS\src;.\Hardware\hardware_AD</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -990,6 +990,21 @@
               <FileName>OLED_Data.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\OLED_2\OLED_Data.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>hardware_AD</GroupName>
+          <Files>
+            <File>
+              <FileName>hardware_AD.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\hardware_AD\hardware_AD.c</FilePath>
+            </File>
+            <File>
+              <FileName>hardware_AD.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\hardware_AD\hardware_AD.h</FilePath>
             </File>
           </Files>
         </Group>
