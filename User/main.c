@@ -13,7 +13,7 @@
 #include "queue.h"                      //Base    FreeRTOS
 #include "semphr.h"                     //Base    FreeRTOS
 
-#include "hardware_AD.h"                //Base    hardware_AD
+
 
 
 #include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
@@ -25,7 +25,7 @@
     #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
 
 
-
+//#include "hardware_AD.h"                //Base    hardware_AD
 //#include "PID_system.h"                 //base     
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "LED.h"                        //Base    (PA12)
@@ -63,22 +63,22 @@ typedef struct {
     float Yaw;
 } Pose_t_mpu6050;
 
-typedef struct {
-    float CH4;
-    float CH5;
-    float CH6;
-    float CH7;
-} Pose_t_AD;
+//typedef struct {
+//    float CH4;
+//    float CH5;
+//    float CH6;
+//    float CH7;
+//} Pose_t_AD;
 
 // 队列句柄
 QueueHandle_t xPoseQueue_mpu6050;
-QueueHandle_t xPoseQueue_AD;
+//QueueHandle_t xPoseQueue_AD;
 
 // 任务句柄
 TaskHandle_t xMPUTaskHandle;
 TaskHandle_t xOLEDTaskHandle;
 TaskHandle_t PC13_led;
-TaskHandle_t xADTaskHandle;
+//TaskHandle_t xADTaskHandle;
 
 //I2C2互斥量
 SemaphoreHandle_t xI2C2Mutex;  
@@ -88,25 +88,25 @@ SemaphoreHandle_t xI2C2Mutex;
 //=================================================================================================//////
 
 
-void GetAD_Taskkvoid(void *pvParameters)
-{
-    Pose_t_AD pose;
-    const TickType_t xFrequency = pdMS_TO_TICKS(50);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    
-    while(1)
-    {
-        pose.CH4  =  AD_GetValue(ADC_Channel_4);
-        pose.CH5  =  AD_GetValue(ADC_Channel_5);
-        pose.CH6  =  AD_GetValue(ADC_Channel_6);
-        pose.CH7  =  AD_GetValue(ADC_Channel_7);
-        
-        xQueueSend(xPoseQueue_AD,&pose,pdMS_TO_TICKS(50));
-        
-        
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    }
-}
+//void GetAD_Taskkvoid(void *pvParameters)
+//{
+//    Pose_t_AD pose;
+//    const TickType_t xFrequency = pdMS_TO_TICKS(50);
+//    TickType_t xLastWakeTime = xTaskGetTickCount();
+//    
+//    while(1)
+//    {
+//        pose.CH4  =  AD_GetValue(ADC_Channel_4);
+//        pose.CH5  =  AD_GetValue(ADC_Channel_5);
+//        pose.CH6  =  AD_GetValue(ADC_Channel_6);
+//        pose.CH7  =  AD_GetValue(ADC_Channel_7);
+//        
+//        xQueueSend(xPoseQueue_AD,&pose,pdMS_TO_TICKS(50));
+//        
+//        
+//        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+//    }
+//}
 
 
 
@@ -165,14 +165,14 @@ void MPU6050_PoseTask(void *pvParameters)
 void OLED_DisplayTask(void *pvParameters)
 {
     Pose_t_mpu6050 recv_pose_mpu6050;
-    Pose_t_AD recv_pose_AD;
+    //Pose_t_AD recv_pose_AD;
     const TickType_t xFrequency = pdMS_TO_TICKS(50);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
     while(1)
     {
-        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS |
-            xQueueReceive(xPoseQueue_AD     ,&recv_pose_AD      , 0) == pdPASS )
+        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS )                    //xQueueReceive(xPoseQueue_AD     ,&recv_pose_AD      , 0) == pdPASS 
+            
         {
             // 获取I2C互斥锁
             if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(5)) == pdTRUE)
@@ -189,12 +189,12 @@ void OLED_DisplayTask(void *pvParameters)
                 Roll = recv_pose_mpu6050.Roll;
                 Yaw = recv_pose_mpu6050.Yaw ;
                 
-                float CH4,CH5,CH6,CH7;
+                //float CH4,CH5,CH6,CH7;
                 
-                CH4 = recv_pose_AD.CH4 ;
-                CH5 = recv_pose_AD.CH5 ;
-                CH6 = recv_pose_AD.CH6 ;
-                CH7 = recv_pose_AD.CH7 ;
+                //CH4 = recv_pose_AD.CH4 ;
+                //CH5 = recv_pose_AD.CH5 ;
+                //CH6 = recv_pose_AD.CH6 ;
+                //CH7 = recv_pose_AD.CH7 ;
                 
                 
 
@@ -239,11 +239,11 @@ void OLED_DisplayTask(void *pvParameters)
                 //    OLED_ShowSignedNum(66, 28, az, 4,OLED_8X16);
                 
                 
-                //OLED显示AD
-                OLED_ShowNum(8*8, 12*0  , CH4  , 5,OLED_8X16);
-                OLED_ShowNum(8*8, 12*1  , CH5  , 5,OLED_8X16);
-                OLED_ShowNum(8*8, 12*2  , CH6  , 5,OLED_8X16);
-                OLED_ShowNum(8*8, 12*3  , CH7  , 5.,OLED_8X16);
+                ////OLED显示AD
+                //OLED_ShowNum(8*8, 12*0  , CH4  , 5,OLED_8X16);
+                //OLED_ShowNum(8*8, 12*1  , CH5  , 5,OLED_8X16);
+                //OLED_ShowNum(8*8, 12*2  , CH6  , 5,OLED_8X16);
+                //OLED_ShowNum(8*8, 12*3  , CH7  , 5.,OLED_8X16);
                 
                 
                 
@@ -301,9 +301,9 @@ int main(void)
     
     MPU6050_DMP_Init();                 OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
     
-    AD_Init();                          OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
     
-
+    
+//    AD_Init();                          OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
@@ -326,7 +326,7 @@ int main(void)
     
     xPoseQueue_mpu6050 = xQueueCreate(2, sizeof(Pose_t_mpu6050));
     
-    xPoseQueue_AD = xQueueCreate(2, sizeof(Pose_t_AD));
+    //xPoseQueue_AD = xQueueCreate(2, sizeof(Pose_t_AD));
     
 // =====================================================
 // 创建任务
@@ -342,8 +342,8 @@ int main(void)
     // PC3_led 任务
     xTaskCreate(Test_PC13_ledTask, "led_PC13", 256, NULL, 1, &PC13_led);
     
-    // AD 任务
-    xTaskCreate(GetAD_Taskkvoid, "AD_Task", 256, NULL, 1, &xADTaskHandle);
+    //// AD 任务
+    //xTaskCreate(GetAD_Taskkvoid, "AD_Task", 256, NULL, 1, &xADTaskHandle);
 
     
     
