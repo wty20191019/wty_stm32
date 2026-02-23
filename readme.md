@@ -5,10 +5,11 @@
 
 | 存储类型 | 计算方式 | 占用大小 | 总容量 | 使用率 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flash (ROM)** | Code + RO-data | 37.05 KB | 64 KB | **57.89%** |
-| **RAM** | RW-data + ZI-data | 13.09 KB | 20 KB | **65.43%** |
+| **Flash (ROM)** | Code + RO-data | 36.14 KB | 64 KB | **56.47%** |
+| **RAM** | RW-data + ZI-data | 7.08 KB | 20 KB | **35.39%** |
 
----
+
+
 
 ```c
 
@@ -16,7 +17,6 @@
 
 
 #include "stm32f10x.h"                  //Device header
-#include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
 #include "math.h" 
 
@@ -44,6 +44,10 @@
 //#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
+//#include "MyDMA.h"                      //Base    hardware_DMA
+//#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
+
+
 
 
 
