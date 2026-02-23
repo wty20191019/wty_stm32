@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\FreeRTOS;.\FreeRTOS\inc;.\FreeRTOS\port;.\FreeRTOS\src;.\Hardware\hardware_AD</IncludePath>
+              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\FreeRTOS;.\FreeRTOS\inc;.\FreeRTOS\port;.\FreeRTOS\src;.\Hardware\hardware_AD;.\Hardware\hardware_AD_DMA</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1015,6 +1015,21 @@
               <FileName>hardware_AD.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\hardware_AD\hardware_AD.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>hardware_AD_DMA</GroupName>
+          <Files>
+            <File>
+              <FileName>adc_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\hardware_AD_DMA\adc_dma.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc_dma.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\hardware_AD_DMA\adc_dma.h</FilePath>
             </File>
           </Files>
         </Group>
