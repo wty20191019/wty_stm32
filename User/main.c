@@ -4,7 +4,6 @@
 
 
 #include "stm32f10x.h"                  //Device header
-#include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
 #include "math.h" 
 
@@ -13,6 +12,7 @@
 #include "queue.h"                      //Base    FreeRTOS
 #include "semphr.h"                     //Base    FreeRTOS
 
+#include "MyDMA.h"
 
 
 
@@ -169,6 +169,12 @@ void OLED_DisplayTask(void *pvParameters)
     const TickType_t xFrequency = pdMS_TO_TICKS(50);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
+    
+    uint8_t DataA[] = {0x01, 0x02, 0x03, 0x04};                 //定义测试数组DataA，为数据源
+    uint8_t DataB[] = {0, 0, 0, 0};                             //定义测试数组DataB，为数据目的地
+    MyDMA_Init((uint32_t)DataA, (uint32_t)DataB, 4);            //DMA初始化，把源数组和目的数组的地址传入
+    
+    
     while(1)
     {
         if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS )                    //xQueueReceive(xPoseQueue_AD     ,&recv_pose_AD      , 0) == pdPASS 
@@ -183,23 +189,6 @@ void OLED_DisplayTask(void *pvParameters)
                 
                 
                 
-                
-                float Pitch, Roll, Yaw;
-                Pitch = recv_pose_mpu6050.Pitch;
-                Roll = recv_pose_mpu6050.Roll;
-                Yaw = recv_pose_mpu6050.Yaw ;
-                
-                //float CH4,CH5,CH6,CH7;
-                
-                //CH4 = recv_pose_AD.CH4 ;
-                //CH5 = recv_pose_AD.CH5 ;
-                //CH6 = recv_pose_AD.CH6 ;
-                //CH7 = recv_pose_AD.CH7 ;
-                
-                
-
-                
-                
                 //OLED显示数字滚动
                 static uint16_t i=0;
                 OLED_ShowNum(i*8,0,i,1,OLED_8X16);
@@ -210,7 +199,11 @@ void OLED_DisplayTask(void *pvParameters)
                 //OLED显示mpu6050数据
 
 
-                int_fast8_t y_p1,y_p2,Yaw_p;   
+                float Pitch, Roll, Yaw;
+                Pitch = recv_pose_mpu6050.Pitch;
+                Roll = recv_pose_mpu6050.Roll;int_fast8_t y_p1,y_p2,Yaw_p;   
+                Yaw = recv_pose_mpu6050.Yaw ;
+                
                 
                 OLED_DrawLine(0,31,127,31);
                 OLED_DrawLine(63,0,63,63);
@@ -228,22 +221,54 @@ void OLED_DisplayTask(void *pvParameters)
                 OLED_ShowSignedNum(8*12, 14*1  , Pitch, 3,OLED_8X16);
                 OLED_ShowSignedNum(8*0, 14*2  , Roll , 3,OLED_8X16);
                 OLED_ShowSignedNum(8*8, 14*4-6  , Yaw  , 3,OLED_8X16);
-
-
-                //    OLED_ShowSignedNum(33, 0  , gx, 5,OLED_8X16);
-                //    OLED_ShowSignedNum(33, 14 , gy, 5,OLED_8X16);
-                //    OLED_ShowSignedNum(33, 28 , gz, 5,OLED_8X16);
-
-                //    OLED_ShowSignedNum(66, 0, ax, 4,OLED_8X16);
-                //    OLED_ShowSignedNum(66, 14, ay, 4,OLED_8X16);
-                //    OLED_ShowSignedNum(66, 28, az, 4,OLED_8X16);
                 
                 
-                ////OLED显示AD
-                //OLED_ShowNum(8*8, 12*0  , CH4  , 5,OLED_8X16);
-                //OLED_ShowNum(8*8, 12*1  , CH5  , 5,OLED_8X16);
-                //OLED_ShowNum(8*8, 12*2  , CH6  , 5,OLED_8X16);
-                //OLED_ShowNum(8*8, 12*3  , CH7  , 5.,OLED_8X16);
+                 
+                
+//                //OLED显示AD
+//                
+
+//                float CH4,CH5,CH6,CH7;
+//                
+//                CH4 = recv_pose_AD.CH4 ;
+//                CH5 = recv_pose_AD.CH5 ;
+//                CH6 = recv_pose_AD.CH6 ;
+//                CH7 = recv_pose_AD.CH7 ;
+//                
+
+//                OLED_ShowNum(8*8, 12*0  , CH4  , 5,OLED_8X16);
+//                OLED_ShowNum(8*8, 12*1  , CH5  , 5,OLED_8X16);
+//                OLED_ShowNum(8*8, 12*2  , CH6  , 5,OLED_8X16);
+//                OLED_ShowNum(8*8, 12*3  , CH7  , 5.,OLED_8X16);
+                
+                
+                //OLED显示
+                
+                OLED_ShowHexNum(0*8, 12*0  , DataA[0]  , 2,OLED_8X16);
+                OLED_ShowHexNum(0*8, 12*1  , DataA[1]  , 2,OLED_8X16);
+                OLED_ShowHexNum(0*8, 12*2  , DataA[2]  , 2,OLED_8X16);
+                OLED_ShowHexNum(0*8, 12*3  , DataA[3]  , 2,OLED_8X16);
+                                                         
+                                                         
+                OLED_ShowHexNum(3*8, 12*0  , DataB[0]  , 2,OLED_8X16);
+                OLED_ShowHexNum(3*8, 12*1  , DataB[1]  , 2,OLED_8X16);
+                OLED_ShowHexNum(3*8, 12*2  , DataB[2]  , 2,OLED_8X16);
+                OLED_ShowHexNum(3*8, 12*3  , DataB[3]  , 2,OLED_8X16);
+                
+                
+                
+                MyDMA_Transfer();	//使用DMA转运数组，从DataA转运到DataB
+                
+                
+                
+                DataA[0] ++;        //变换测试数据       
+                DataA[1] ++;                                        
+                DataA[2] ++;                                        
+                DataA[3] ++;                                        
+                
+                
+                
+                
                 
                 
                 
