@@ -62,7 +62,7 @@
  * 可管理的中断最高优先级
  * 重要：不能设置为0！详见http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html
  */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY     191    /* 191对应优先级11 (0xb0) */
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY     80    
 
 /* 
  * ST标准库使用的优先级值 (0-15, 0为最高优先级)

@@ -13,7 +13,7 @@
 #include "semphr.h"                     //Base    FreeRTOS
 
 
-
+#include "Serial.h"                     //Base    hardware_Serial   USART   TTL
 
 #include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
 
@@ -177,9 +177,10 @@ void OLED_DisplayTask(void *pvParameters)
                 
                 //OLED显示数字滚动
                 static uint16_t i=0;
-                OLED_ShowNum(i*8,0,i,1,OLED_8X16);
+                OLED_ShowNum(i*8,0,i,1,OLED_8X16);    Serial_Printf("i=%d\r\n",i);
                 i++;
                 i = (i>9?0:i);
+                
 
 
                 //OLED显示mpu6050数据
@@ -241,6 +242,13 @@ void OLED_DisplayTask(void *pvParameters)
 int main(void)
 {   
 
+// =====================================================
+// 设置NVIC优先级分组
+// =====================================================
+
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+
+
 
 //////====================================================================================================
 //////模块初始化
@@ -257,21 +265,27 @@ int main(void)
     
     MPU6050_DMP_Init();                 OLED_ShowNum(0,3,3,1,OLED_8X16);OLED_Update();
     
-//    AD_DMA_Init();                      OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
+    Serial_Init();                      OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
+    
+    
+    
+
 
 
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
 //    Encoder2_TIM4_Init();
+//    AD_DMA_Init();
+
+
+
 
 //--------------------------------------------------------------------------------------------------------
-    
-// =====================================================
-// 设置NVIC优先级分组
-// =====================================================
 
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
+
+
+
     
     
 //FreeRTOS==============================================
@@ -319,7 +333,7 @@ int main(void)
     
     
 // =====================================================
-    vTaskStartScheduler();
+    vTaskStartScheduler();  //启动调度
 //------------------------------------------------------
 
 
