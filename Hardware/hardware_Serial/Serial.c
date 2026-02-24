@@ -1,158 +1,171 @@
-#include "stm32f10x.h"
+#include "stm32f10x.h"                  // Device header
 #include <stdio.h>
 #include <stdarg.h>
 
-//缓冲区
-#define SERIAL_BUFFER_SIZE 128
-static uint8_t rxBuffer[SERIAL_BUFFER_SIZE];
-static uint16_t rxIndex = 0;
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
 
+#include "Serial.h"
+
+QueueHandle_t xSerialRxQueue = NULL;
+QueueHandle_t xSerialTxQueue = NULL;
+
+
+/**
+  * 函    数：串口初始化
+  * 参    数：无
+  * 返 回 值：无
+  */
 void Serial_Init(void)
 {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
+    /*开启时钟*/
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);      //开启USART1的时钟
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);       //开启GPIOA的时钟
     
-    // GPIO配置
+    /*GPIO初始化*/
     GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    
-    // TX - PA9
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);                    //将PA9引脚初始化为复用推挽输出
     
-    // RX - PA10
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);                    //将PA10引脚初始化为上拉输入
     
-    // USART配置
-    USART_InitTypeDef USART_InitStructure;
-    USART_InitStructure.USART_BaudRate = 9600;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_Init(USART1, &USART_InitStructure);
+    /*USART初始化*/
+    USART_InitTypeDef USART_InitStructure;                                              //定义结构体变量
+    USART_InitStructure.USART_BaudRate = 9600;                                          //波特率
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;     //硬件流控制，不需要
+    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;                     //模式，发送模式和接收模式均选择
+    USART_InitStructure.USART_Parity = USART_Parity_No;                                 //奇偶校验，不需要
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;                              //停止位，选择1位
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;                         //字长，选择8位
+    USART_Init(USART1, &USART_InitStructure);                                           //将结构体变量交给USART_Init，配置USART1
     
-    USART_Cmd(USART1, ENABLE);
+    /*中断输出配置*/
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);              //开启串口接收数据的中断
     
-    // 清空缓冲区
-    for(int i = 0; i < SERIAL_BUFFER_SIZE; i++) {
-        rxBuffer[i] = 0;
-    }
-    rxIndex = 0;
+    /*NVIC配置*/
+    NVIC_InitTypeDef NVIC_InitStructure;                            //定义结构体变量
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;               //选择配置NVIC的USART1线
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                 //指定NVIC线路使能
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 9;       //指定NVIC线路的抢占优先级
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;              //指定NVIC线路的响应优先级
+    NVIC_Init(&NVIC_InitStructure);                                 //将结构体变量交给NVIC_Init，配置NVIC外设
+    
+    /*USART使能*/
+    USART_Cmd(USART1, ENABLE);                                //使能USART1，串口开始运行
+    
+
 }
 
-// ==========发送函数 ==========
 
-// 串口发送一个字节
-void Serial_SendByte(uint8_t Byte)
-{
-    USART_SendData(USART1, Byte);
-    while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-}
-
-// 串口发送一个数组
-void Serial_SendArray(uint8_t *Array, uint16_t Length)
-{
-    uint16_t i;
-    for(i = 0; i < Length; i++) {
-        Serial_SendByte(Array[i]);
-    }
-}
-
-// 串口发送一个字符串
-void Serial_SendString(char *String)
-{
-    uint8_t i;
-    for(i = 0; String[i] != '\0'; i++) {
-        Serial_SendByte(String[i]);
-    }
-}
-
-// 次方函数（内部使用）
+/**
+  * 函    数：次方函数（内部使用）
+  * 返 回 值：返回值等于X的Y次方
+  */
 uint32_t Serial_Pow(uint32_t X, uint32_t Y)
 {
-    uint32_t Result = 1;
-    while(Y--) {
-        Result *= X;
+    uint32_t Result = 1;    //设置结果初值为1
+    while (Y --)            //执行Y次
+    {
+        Result *= X;        //将X累乘到结果
     }
     return Result;
 }
 
-// 串口发送数字
-void Serial_SendNumber(uint32_t Number, uint8_t Length)
+
+/**
+  * 函    数：USART1中断函数
+  * 参    数：无
+  * 返 回 值：无
+  * 注意事项：此函数为中断函数，无需调用，中断触发后自动执行
+  *           函数名为预留的指定名称，可以从启动文件复制
+  *           请确保函数名正确，不能有任何差异，否则中断函数将不能进入
+  */
+  void USART1_IRQHandler(void)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;  // 默认为 pdFALSE = ( ( BaseType_t ) 0 )
+    uint8_t ucReceivedData;
+
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
+    {
+        ucReceivedData = USART_ReceiveData(USART1); // 读取数据
+
+        // 注意：从中断调用，必须使用 xQueueSendToBackFromISR
+        xQueueSendToBackFromISR(xSerialRxQueue,
+                                &ucReceivedData,
+                                &xHigherPriorityTaskWoken);
+
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+    }
+
+    // 如果有任务因为此中断而被解除阻塞，且其优先级高于当前运行的任务，
+    // 则 xHigherPriorityTaskWoken 会被设置为 pdTRUE      //pdTRUE = ( ( BaseType_t ) 1 )
+    // 随后我们必须请求进行一次上下文切换。
+    
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+
+// 供其他任务调用的非阻塞发送 API
+void Serial_SendByte_Async(uint8_t Byte)
+{
+    xQueueSend(xSerialTxQueue, &Byte,pdMS_TO_TICKS(1) );               //portMAX_DELAY
+}
+
+void Serial_SendArray(uint8_t *Array, uint16_t Length)
+{
+    uint16_t i;
+    for (i = 0; i < Length; i ++)               
+    {
+        Serial_SendByte_Async(Array[i]);        
+    }
+}
+
+void Serial_SendString_Async(char *String)
+{
+    while (*String != '\0')
+    {
+        Serial_SendByte_Async(*String);
+        String++;
+    }
+}
+
+void Serial_SendNumber_Async(uint32_t Number, uint8_t Length)
 {
     uint8_t i;
-    for(i = 0; i < Length; i++) {
-        Serial_SendByte(Number / Serial_Pow(10, Length - i - 1) % 10 + '0');
-    }
-}
-
-// 自己封装的printf函数
-void Serial_Printf(char *format, ...)
-{
-    char String[100];            // 定义字符数组
-    va_list arg;                 // 定义可变参数列表数据类型的变量arg
-    va_start(arg, format);       // 从format开始，接收参数列表到arg变量
-    vsprintf(String, format, arg); // 使用vsprintf打印格式化字符串和参数列表到字符数组中
-    va_end(arg);                 // 结束变量arg
-    Serial_SendString(String);   // 串口发送字符数组（字符串）
-}
-
-// 使用printf需要重定向的底层函数
-int fputc(int ch, FILE *f)
-{
-    Serial_SendByte(ch);         // 将printf的底层重定向到自己的发送字节函数
-    return ch;
-}
-
-// ==========轮询接收函数 ==========
-
-// 轮询接收（在任务中调用）
-void Serial_ReceiveTask(void)
-{
-    // 检查是否有数据
-    if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET)
+    for (i = 0; i < Length; i ++)        //根据数字长度遍历数字的每一位
     {
-        uint8_t data = USART_ReceiveData(USART1);
-        
-        // 存入缓冲区
-        if(rxIndex < SERIAL_BUFFER_SIZE-1)
-        {
-            rxBuffer[rxIndex++] = data;
-            
-            // 如果收到回车或换行，处理命令
-            if(data == '\r' || data == '\n')
-            {
-                if(rxIndex > 1)  // 有实际数据
-                {
-                    rxBuffer[rxIndex-1] = '\0';  // 替换换行为结束符
-                    // 这里可以处理接收到的数据
-                }
-                rxIndex = 0;  // 清空缓冲区
-            }
-        }
-        else
-        {
-            rxIndex = 0;  // 缓冲区满，清空
-        }
+        Serial_SendByte_Async(Number / Serial_Pow(10, Length - i - 1) % 10 + '0');    //依次调用Serial_SendByte发送每位数字
     }
 }
 
-// 获取接收到的字符串（如果有完整的一行）
-char* Serial_GetLine(void)
+void Serial_Printf_Async(char *format, ...)
 {
-    for(int i = 0; i < rxIndex; i++)
-    {
-        if(rxBuffer[i] == '\r' || rxBuffer[i] == '\n')
-        {
-            rxBuffer[i] = '\0';
-            char* result = (char*)rxBuffer;
-            rxIndex = 0;  // 清空缓冲区
-            return result;
-        }
-    }
-    return NULL;  // 没有完整的一行
+    char String[256];                   //定义字符数组
+    va_list arg;                        //定义可变参数列表数据类型的变量arg
+    va_start(arg, format);              //从format开始，接收参数列表到arg变量
+    vsprintf(String, format, arg);      //使用vsprintf打印格式化字符串和参数列表到字符数组中
+    va_end(arg);                        //结束变量arg
+    Serial_SendString_Async(String);    //串口发送字符数组（字符串）
 }
+
+void Serial_SendStruct_Async(void *pStruct, uint16_t Size)
+{
+    // 将结构体指针转换为字节（uint8_t）指针
+    uint8_t *pByte = (uint8_t *)pStruct;
+    
+    // 循环发送每一个字节
+    for(uint16_t i = 0; i < Size; i++)
+    {
+        Serial_SendByte_Async(pByte[i]); // 调用您已有的异步字节发送函数
+    }
+}
+
+
+

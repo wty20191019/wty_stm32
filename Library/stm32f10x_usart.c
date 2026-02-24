@@ -1001,6 +1001,32 @@ ITStatus USART_GetITStatus(USART_TypeDef* USARTx, uint16_t USART_IT)
 }
 
 /**
+  * @brief 清除USARTx的中断挂起位。
+  * @param USARTx：选择USART或UART外设。 
+  * 此参数可以是以下值之一：
+  * USART1、USART2、USART3、UART4或UART5。
+  * @param USART_IT：指定要清除的中断挂起位。
+  * 此参数可以是以下值之一：
+  * @arg USART_IT_CTS：CTS变化中断（不适用于UART4和UART5）
+  * @arg USART_IT_LBD：LIN中断检测中断
+  * @arg USART_IT_TC：传输完成中断。 
+  * @arg USART_IT_RXNE：接收数据寄存器非空中断。
+  *   
+  * @note
+  * - PE（奇偶校验错误）、FE（帧错误）、NE（噪声错误）、ORE（溢出错误）
+  * 错误）和IDLE（检测到空闲行）挂起位被清除
+  * 软件序列：对USART_SR寄存器进行读取操作
+  * 先调用 (USART_GetITStatus())，然后对USART_DR寄存器进行读取操作
+  * (USART_ReceiveData())。
+  * - 通过读取USART_DR寄存器，也可以清除RXNE挂起位
+  * (USART_ReceiveData())。
+  * - TC挂起位也可以通过软件序列清除：读取
+  * 先对USART_SR寄存器进行操作（USART_GetITStatus()），然后进行写入
+  * 对USART_DR寄存器执行操作（USART_SendData()）。
+  * - TXE挂起位仅可通过向USART_DR寄存器写入数据来清除
+  * (USART_SendData())。
+  * @返回值 无
+===============================================================================================
   * @brief  Clears the USARTx's interrupt pending bits.
   * @param  USARTx: Select the USART or the UART peripheral. 
   *   This parameter can be one of the following values:

@@ -25,9 +25,9 @@
 #define configUSE_TICK_HOOK             0                                   /* 1: 启用时钟节拍钩子函数; 0: 禁用 */
 #define configCPU_CLOCK_HZ              ( ( unsigned long ) 72000000 )      /* CPU时钟频率: 72MHz (STM32F103) */
 #define configTICK_RATE_HZ              ( ( TickType_t ) 1000 )             /* 系统节拍频率: 1000Hz (1ms) */
-#define configMAX_PRIORITIES            ( 8 )                               /* 最大任务优先级数 (0-7, 0为最低) */
+#define configMAX_PRIORITIES            ( 5 )                               /* 最大任务优先级数 (0-4, 0为最低) */
 #define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 256 )          /* 空闲任务堆栈大小 (字) */
-#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 4 * 1024 ) )         /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
+#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 8 * 1024 ) )         /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
 #define configMAX_TASK_NAME_LEN         ( 16 )                              /* 任务名称最大长度 */
 #define configUSE_TRACE_FACILITY        0                                   /* 1: 启用可视化跟踪调试; 0: 禁用 (节省资源) */
 #define configUSE_16_BIT_TICKS          0                                   /* 1: 使用16位Tick计数器; 0: 使用32位Tick计数器 */
@@ -52,24 +52,48 @@
 #define INCLUDE_vTaskDelayUntil         1    /* 包含绝对延时函数vTaskDelayUntil */
 #define INCLUDE_vTaskDelay              1    /* 包含相对延时函数vTaskDelay */
 
-/* 
- * 中断优先级配置 - Cortex-M3/M4内核特定
- * 注意：Cortex-M3使用8位优先级寄存器，但STM32只使用高4位
- */
+//中断优先级配置    - Cortex-M3/M4内核特定(注意：Cortex-M3使用8位优先级寄存器，但STM32只使用高4位)
 #define configKERNEL_INTERRUPT_PRIORITY         255    /* 内核中断优先级: 255(最低) 对应优先级15 */
 
-/* 
- * 可管理的中断最高优先级
- * 重要：不能设置为0！详见http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html
- */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY     80    
+//可管理的中断最高优先级   (重要：不能设置为0！详见http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html)
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    128
 
-/* 
- * ST标准库使用的优先级值 (0-15, 0为最高优先级)
- * 这必须与configKERNEL_INTERRUPT_PRIORITY设置对应
- * 这里15对应NVIC的最低优先级值255
- */
-#define configLIBRARY_KERNEL_INTERRUPT_PRIORITY    15
+/*
+
+    如果使用的是带有 STM32 驱动程序库的 STM32
+    则在启动 RTOS 之前，通过 调用 NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 )
+    确保将所有优先级位分配为抢占式优先级位。
+    详见：https://www.freertos.org/zh-cn-cmn-s/Documentation/02-Kernel/03-Supported-devices/04-Demos/ARM-Cortex/RTOS-Cortex-M3-M4
+
+
+    根据Cortex-M3/M4内核的中断优先级机制
+    STM32只使用优先级寄存器的高4位
+    因此实际优先级范围为0-15（0最高，15最低）
+    在FreeRTOS配置中，通常使用8位数值
+    实际只取高4位作为优先级值
+
+    以下是8位配置值与实际优先级对应表：
+
+| 8位配置值(十进制) | 二进制(高4位) | 实际优先级（0-15）|
+|-------------------|---------------|-------------------|
+| 0-15              | 0000          | 0（最高）         |
+| 16-31             | 0001          | 1                 |
+| 32-47             | 0010          | 2                 |
+| 48-63             | 0011          | 3                 |
+| 64-79             | 0100          | 4                 |
+| 80-95             | 0101          | 5                 |
+| 96-111            | 0110          | 6                 |
+| 112-127           | 0111          | 7                 |
+| 128-143           | 1000          | 8                 |
+| 144-159           | 1001          | 9                 |
+| 160-175           | 1010          | 10                |
+| 176-191           | 1011          | 11                |
+| 192-207           | 1100          | 12                |
+| 208-223           | 1101          | 13                |
+| 224-239           | 1110          | 14                |
+| 240-255           | 1111          | 15（最低）        |
+*/
+
 
 /* 
  * 中断服务例程重命名
@@ -102,7 +126,6 @@
 #define configTIMER_QUEUE_LENGTH                5                                   /* 定时器命令队列长度 */
 #define configTIMER_TASK_STACK_DEPTH            ( configMINIMAL_STACK_SIZE * 2 )    /* 定时器任务栈大小 */
 
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 5  // 可管理的最高中断优先级
 
 
 #endif /* FREERTOS_CONFIG_H */

@@ -35,11 +35,6 @@
 //#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
 
 
-
-
-
-
-
 //////===================================================================================================
 //变量定义
 //////===================================================================================================
@@ -64,20 +59,16 @@ TaskHandle_t xMPUTaskHandle;
 TaskHandle_t xOLEDTaskHandle;
 TaskHandle_t PC13_led;
 //TaskHandle_t xADTaskHandle;
+TaskHandle_t vSerialRxTaskHandle;
+TaskHandle_t vSerialTxTaskHandle;
 
-//I2C2互斥量
+
+// 互斥量
+
 SemaphoreHandle_t xI2C2Mutex;  
 
 
-
-
 //=================================================================================================//////
-
-
-
-
-
-
 
 //void GetAD_Task(void *pvParameters)
 //{
@@ -90,11 +81,11 @@ SemaphoreHandle_t xI2C2Mutex;
 //    while(1)
 //    {
 //        
-//        taskENTER_CRITICAL();
+//        taskENTER_CRITICAL();     //标记关键代码区域,在关键区域中,不能发生抢先上下文切换
 //        
 //        memcpy(ad_data, AD_Value, sizeof(ad_data));
 //        
-//        taskEXIT_CRITICAL();
+//        taskEXIT_CRITICAL();      //标记关键代码区域,在关键区域中,不能发生抢先上下文切换
 //        
 //        
 //        
@@ -105,6 +96,45 @@ SemaphoreHandle_t xI2C2Mutex;
 //    }
 //}
 
+
+void vSerialRxTask(void *pvParameters)
+{Serial_Printf_Async("vSerialTxTask\r\n");Serial_Printf_Async("\r\n");
+    uint8_t ucRxData;
+    
+    while(1)
+    {
+        // 阻塞等待队列中出现数据
+        if (xQueueReceive(xSerialRxQueue,&ucRxData,pdMS_TO_TICKS(10)) == pdPASS)       // xSerialRxQueue 在  erial.h里定义
+        {
+            // 成功收到数据，在这里进行安全、耗时的处理
+            // 例如：解析协议、将数据存入缓冲、通知其他任务等
+            Serial_Printf_Async("%c\r\n", ucRxData, ucRxData);
+
+
+
+
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+void vSerialTxTask(void *pvParameters)
+{
+    uint8_t ucTxData;
+    
+    while(1)
+    {
+        // 阻塞等待发送队列中的数据
+        if (xQueueReceive(xSerialTxQueue, &ucTxData, pdMS_TO_TICKS(1)) == pdPASS)   // xSerialTxQueue 在  erial.h里定义
+        {
+            // 阻塞等待发送完成   //因为这是独占的发送任务，所以没问题
+            USART_SendData(USART1, ucTxData);
+            while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+            
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
 
 
 void Test_PC13_ledTask(void *pvParameters)
@@ -135,11 +165,12 @@ void MPU6050_PoseTask(void *pvParameters)
 {
     float Pitch, Roll, Yaw;
     Pose_t_mpu6050 pose;
-    const TickType_t xFrequency = pdMS_TO_TICKS(1);
+    const TickType_t xFrequency = pdMS_TO_TICKS(2);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
     while(1)
     {
+        
         
         if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)// 获取I2C互斥锁
         {
@@ -149,8 +180,15 @@ void MPU6050_PoseTask(void *pvParameters)
             pose.Pitch = Pitch;
             pose.Roll = Roll;
             pose.Yaw = Yaw;
+            
+            
+            
+            
+            
             xQueueOverwrite(xPoseQueue_mpu6050, &pose);
         }
+        
+        
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
@@ -168,6 +206,17 @@ void OLED_DisplayTask(void *pvParameters)
     {
         if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , 0) == pdPASS
         {
+
+            
+            
+//            Serial_Printf_Async("============================\r\n");
+//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Pitch);
+//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Roll);
+//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Yaw);
+            
+            
+
+            
             if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(5)) == pdTRUE)// 获取I2C互斥锁
             {
                 //---------------------------------------
@@ -177,7 +226,7 @@ void OLED_DisplayTask(void *pvParameters)
                 
                 //OLED显示数字滚动
                 static uint16_t i=0;
-                OLED_ShowNum(i*8,0,i,1,OLED_8X16);    Serial_Printf("i=%d\r\n",i);
+                OLED_ShowNum(i*8,0,i,1,OLED_8X16);    //Serial_Printf("i=%d\r\n",i);
                 i++;
                 i = (i>9?0:i);
                 
@@ -221,34 +270,14 @@ void OLED_DisplayTask(void *pvParameters)
 }
 
 
-
-            
-       
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int main(void)
 {   
 
 // =====================================================
-// 设置NVIC优先级分组
+// 设置NVIC优先级分组                            
 // =====================================================
 
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-
-
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);    //如果使用的是带有 STM32 驱动程序库的 STM32 ，则在启动 RTOS 之前，通过 调用 NVIC_PriorityGroupConfig( NVIC_PriorityGroup_4 )，确保将所有优先级位分配为抢占式优先级位。 详见：https://www.freertos.org/zh-cn-cmn-s/Documentation/02-Kernel/03-Supported-devices/04-Demos/ARM-Cortex/RTOS-Cortex-M3-M4
 
 //////====================================================================================================
 //////模块初始化
@@ -267,7 +296,7 @@ int main(void)
     
     Serial_Init();                      OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
     
-    
+      
     
 
 
@@ -300,6 +329,8 @@ int main(void)
 // =====================================================
     
     xPoseQueue_mpu6050 = xQueueCreate(1, sizeof(Pose_t_mpu6050));
+    xSerialTxQueue = xQueueCreate(128,4);
+    xSerialRxQueue = xQueueCreate(128,4);
     
 //    xPoseQueue_AD = xQueueCreate(2, sizeof(uint16_t[4]));
     
@@ -319,17 +350,21 @@ int main(void)
 
     
     // OLED 显示任务
-    xTaskCreate(OLED_DisplayTask, "OLEDTask", 128, NULL, 1, &xOLEDTaskHandle);
+    xTaskCreate(OLED_DisplayTask, "OLED", 128, NULL, 1, &xOLEDTaskHandle);
     
     // MPU6050 任务
-    xTaskCreate(MPU6050_PoseTask, "MPUTask", 128, NULL, 2, &xMPUTaskHandle);
+    xTaskCreate(MPU6050_PoseTask, "MPU", 128, NULL, 2, &xMPUTaskHandle);
     
     // PC3_led 任务
-    xTaskCreate(Test_PC13_ledTask, "led_PC13", 32, NULL, 1, &PC13_led);
+    //xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led);
     
 //    // AD 任务
 //    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);
     
+    // SerialRx 任务
+    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 3,&vSerialRxTaskHandle);
+    // SerialTx 任务
+    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 1,&vSerialTxTaskHandle);
     
     
 // =====================================================

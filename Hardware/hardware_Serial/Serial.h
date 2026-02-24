@@ -3,22 +3,22 @@
 
 #include <stdio.h>
 
-// hardware_Serial   USART   TTL
+extern QueueHandle_t xSerialRxQueue;    // 用于接收数据的队列
+extern QueueHandle_t xSerialTxQueue;    // 用于发送数据的队列
 
 void Serial_Init(void);
-void Serial_SendByte(uint8_t Byte);
-void Serial_SendArray(uint8_t *Array, uint16_t Length);  //数组
-void Serial_SendString(char *String);
-void Serial_SendNumber(uint32_t Number, uint8_t Length);
-void Serial_Printf(char *format, ...);
 
-
-uint16_t Serial_ReceiveNonBlocking(void);
-uint16_t Serial_Available(void);
-uint8_t Serial_ReadByte(void);
-uint16_t Serial_ReadBytes(uint8_t *buffer, uint16_t maxLen);
-void Serial_Flush(void);
+// 供其他任务调用的非阻塞发送 API
+void Serial_SendByte_Async(uint8_t Byte) ;
+void Serial_SendArray(uint8_t *Array, uint16_t Length);
+void Serial_SendString_Async(char *String);
+void Serial_SendNumber_Async(uint32_t Number, uint8_t Length);
+void Serial_Printf_Async(char *format, ...);
+void Serial_SendStruct_Async(void *pStruct, uint16_t Size);
 
 
 
 #endif
+
+
+
