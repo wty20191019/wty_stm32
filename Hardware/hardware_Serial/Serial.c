@@ -37,7 +37,7 @@ void Serial_Init(void)
     
     /*USART初始化*/
     USART_InitTypeDef USART_InitStructure;                                              //定义结构体变量
-    USART_InitStructure.USART_BaudRate = 9600;                                          //波特率
+    USART_InitStructure.USART_BaudRate = 9600;                                          //波特率  //9600  //19200  //38400  
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;     //硬件流控制，不需要
     USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;                     //模式，发送模式和接收模式均选择
     USART_InitStructure.USART_Parity = USART_Parity_No;                                 //奇偶校验，不需要
@@ -52,7 +52,7 @@ void Serial_Init(void)
     NVIC_InitTypeDef NVIC_InitStructure;                            //定义结构体变量
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;               //选择配置NVIC的USART1线
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                 //指定NVIC线路使能
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 9;       //指定NVIC线路的抢占优先级
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 11;      //指定NVIC线路的抢占优先级
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;              //指定NVIC线路的响应优先级
     NVIC_Init(&NVIC_InitStructure);                                 //将结构体变量交给NVIC_Init，配置NVIC外设
     
@@ -95,11 +95,16 @@ uint32_t Serial_Pow(uint32_t X, uint32_t Y)
     {
         ucReceivedData = USART_ReceiveData(USART1); // 读取数据
 
-        // 注意：从中断调用，必须使用 xQueueSendToBackFromISR
-        xQueueSendToBackFromISR(xSerialRxQueue,
+        // 增加队列非空检查，避免向NULL队列发送
+        if(xSerialRxQueue != NULL)
+        {
+            // 注意：从中断调用，必须使用 xQueueSendToBackFromISR
+            xQueueSendToBackFromISR(xSerialRxQueue,
                                 &ucReceivedData,
                                 &xHigherPriorityTaskWoken);
-
+            
+            
+        }
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 
@@ -115,7 +120,7 @@ uint32_t Serial_Pow(uint32_t X, uint32_t Y)
 // 供其他任务调用的非阻塞发送 API
 void Serial_SendByte_Async(uint8_t Byte)
 {
-    xQueueSend(xSerialTxQueue, &Byte,pdMS_TO_TICKS(1) );               //portMAX_DELAY
+    xQueueSend(xSerialTxQueue, &Byte,portMAX_DELAY);               //portMAX_DELAY
 }
 
 void Serial_SendArray(uint8_t *Array, uint16_t Length)
@@ -145,15 +150,32 @@ void Serial_SendNumber_Async(uint32_t Number, uint8_t Length)
     }
 }
 
+//void Serial_Printf_Async(char *format, ...)
+//{
+//    char String[256];                   //定义字符数组
+//    va_list arg;                        //定义可变参数列表数据类型的变量arg
+//    va_start(arg, format);              //从format开始，接收参数列表到arg变量
+//    vsprintf(String, format, arg);      //使用vsprintf打印格式化字符串和参数列表到字符数组中
+//    va_end(arg);                        //结束变量arg
+//    Serial_SendString_Async(String);    //串口发送字符数组（字符串）
+//}
+
+
 void Serial_Printf_Async(char *format, ...)
 {
-    char String[256];                   //定义字符数组
-    va_list arg;                        //定义可变参数列表数据类型的变量arg
-    va_start(arg, format);              //从format开始，接收参数列表到arg变量
-    vsprintf(String, format, arg);      //使用vsprintf打印格式化字符串和参数列表到字符数组中
-    va_end(arg);                        //结束变量arg
-    Serial_SendString_Async(String);    //串口发送字符数组（字符串）
+    char String[256];                  
+    va_list arg;                        
+    va_start(arg, format);              
+    // 改用vsnprintf，限制最大长度，避免缓冲区溢出
+    vsnprintf(String, sizeof(String) - 1, format, arg);
+    String[sizeof(String) - 1] = '\0'; // 强制结尾符，防止溢出
+    va_end(arg);                        
+    Serial_SendString_Async(String);    
 }
+
+
+
+
 
 void Serial_SendStruct_Async(void *pStruct, uint16_t Size)
 {

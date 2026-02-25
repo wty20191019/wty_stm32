@@ -27,7 +27,6 @@
 //#include "hardware_AD.h"                //Base    hardware_AD
 //#include "PID_system.h"                 //base     
 //#include "key.h"                        //Base    (PB1 ) (PB11)
-//#include "LED.h"                        //Base    (PA12)
 //#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
@@ -65,7 +64,8 @@ TaskHandle_t vSerialTxTaskHandle;
 
 // 互斥量
 
-SemaphoreHandle_t xI2C2Mutex;  
+SemaphoreHandle_t xI2C2Mutex;
+  
 
 
 //=================================================================================================//////
@@ -97,46 +97,47 @@ SemaphoreHandle_t xI2C2Mutex;
 //}
 
 
+
+
+
+// 接收任务：处理串口接收的数据
 void vSerialRxTask(void *pvParameters)
-{Serial_Printf_Async("vSerialTxTask\r\n");Serial_Printf_Async("\r\n");
+{
     uint8_t ucRxData;
     
     while(1)
     {
-        // 阻塞等待队列中出现数据
-        if (xQueueReceive(xSerialRxQueue,&ucRxData,pdMS_TO_TICKS(10)) == pdPASS)       // xSerialRxQueue 在  erial.h里定义
+        if (xQueueReceive(xSerialRxQueue, &ucRxData, pdMS_TO_TICKS(10)) == pdPASS)
         {
-            // 成功收到数据，在这里进行安全、耗时的处理
-            // 例如：解析协议、将数据存入缓冲、通知其他任务等
-            Serial_Printf_Async("%c\r\n", ucRxData, ucRxData);
-
-
-
-
+            
+            
+            Serial_Printf_Async("Received: %c (0x%02X)\r\n", ucRxData, ucRxData);
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
+
+// 发送任务：处理串口发送的数据
 void vSerialTxTask(void *pvParameters)
 {
+    
     uint8_t ucTxData;
     
     while(1)
     {
-        // 阻塞等待发送队列中的数据
-        if (xQueueReceive(xSerialTxQueue, &ucTxData, pdMS_TO_TICKS(1)) == pdPASS)   // xSerialTxQueue 在  erial.h里定义
+        if (xQueueReceive(xSerialTxQueue, &ucTxData, pdMS_TO_TICKS(10)) == pdPASS)
         {
-            // 阻塞等待发送完成   //因为这是独占的发送任务，所以没问题
             USART_SendData(USART1, ucTxData);
-            while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-            
+            while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+            USART_ClearFlag(USART1, USART_FLAG_TC);
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
 
+// PC13_led 任务
 void Test_PC13_ledTask(void *pvParameters)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
@@ -161,10 +162,13 @@ void Test_PC13_ledTask(void *pvParameters)
 }
 
 
+
+// MPU6050 任务
 void MPU6050_PoseTask(void *pvParameters)
 {
     float Pitch, Roll, Yaw;
     Pose_t_mpu6050 pose;
+    static Pose_t_mpu6050 last_pose = {0};
     const TickType_t xFrequency = pdMS_TO_TICKS(2);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
@@ -172,7 +176,7 @@ void MPU6050_PoseTask(void *pvParameters)
     {
         
         
-        if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)// 获取I2C互斥锁
+        if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(5)) == pdTRUE)// 获取I2C互斥锁
         {
             MPU6050_DMP_Get_Data(&Pitch, &Roll, &Yaw);
             xSemaphoreGive(xI2C2Mutex);// 释放锁
@@ -181,11 +185,12 @@ void MPU6050_PoseTask(void *pvParameters)
             pose.Roll = Roll;
             pose.Yaw = Yaw;
             
-            
-            
-            
-            
             xQueueOverwrite(xPoseQueue_mpu6050, &pose);
+        }
+         else
+        {
+            // 获取互斥量失败，使用上一次有效数据
+            xQueueOverwrite(xPoseQueue_mpu6050, &last_pose);
         }
         
         
@@ -194,7 +199,7 @@ void MPU6050_PoseTask(void *pvParameters)
 }
 
 
-
+// OLED 显示任务
 void OLED_DisplayTask(void *pvParameters)
 {
     Pose_t_mpu6050 recv_pose_mpu6050;
@@ -204,26 +209,32 @@ void OLED_DisplayTask(void *pvParameters)
 
     while(1)
     {
-        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , 0) == pdPASS
+        
+        
+        
+        
+        
+        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 1) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , 10) == pdPASS
         {
 
             
-            
-//            Serial_Printf_Async("============================\r\n");
-//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Pitch);
-//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Roll);
-//            Serial_Printf_Async("%f\r\n",recv_pose_mpu6050.Yaw);
-            
-            
+            Serial_Printf_Async("Pitch=%6.2f  Roll=%6.2f  Yaw=%6.2f\r\n",
+                    recv_pose_mpu6050.Pitch,
+                    recv_pose_mpu6050.Roll,
+                    recv_pose_mpu6050.Yaw);
 
-            
-            if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(5)) == pdTRUE)// 获取I2C互斥锁
+
+
+            if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)// 获取I2C互斥锁
             {
-                //---------------------------------------
+                
+                
+                
+                
+                
+                //OLED========================
                 OLED_Clear(); 
-                
-                
-                
+
                 //OLED显示数字滚动
                 static uint16_t i=0;
                 OLED_ShowNum(i*8,0,i,1,OLED_8X16);    //Serial_Printf("i=%d\r\n",i);
@@ -233,24 +244,22 @@ void OLED_DisplayTask(void *pvParameters)
 
 
                 //OLED显示mpu6050数据
-                
-                
                 int_fast8_t y_p1,y_p2,Yaw_p;
                 y_p1    = 32+32*(recv_pose_mpu6050.Pitch/90);
                 y_p2    = 63*tan(recv_pose_mpu6050.Roll* PI / 180.0);
                 Yaw_p   = 63+63*(recv_pose_mpu6050.Yaw   /180); 
                 
+                OLED_ShowString  (8*12  , 21        ,"Pitch"                        ,OLED_6X8);
+                OLED_ShowFloatNum(8*10  , 14*2      , recv_pose_mpu6050.Pitch, 2,2  ,OLED_8X16);
+                OLED_ShowString  (8*0   , 21        ,"Roll"                         ,OLED_6X8);
+                OLED_ShowFloatNum(8*0   , 14*2      , recv_pose_mpu6050.Roll , 2,2  ,OLED_8X16);
+                OLED_ShowString  (8*5   , 14*4      ,"Yaw"                          ,OLED_6X8);
+                OLED_ShowFloatNum(8*8   , 14*4-6    , recv_pose_mpu6050.Yaw  , 2,2  ,OLED_8X16);
+                
                 OLED_DrawLine(0     ,31         ,127    ,31         );
                 OLED_DrawLine(63    ,0          ,63     ,63         );
                 OLED_DrawLine(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2  );
                 OLED_DrawLine(Yaw_p ,0          ,Yaw_p  ,63         );
-                
-                OLED_ShowSignedNum(8*12, 14*1   , recv_pose_mpu6050.Pitch, 3,OLED_8X16);
-                OLED_ShowSignedNum(8*0, 14*2    , recv_pose_mpu6050.Roll , 3,OLED_8X16);
-                OLED_ShowSignedNum(8*8, 14*4-6  , recv_pose_mpu6050.Yaw  , 3,OLED_8X16);
-                
-                
-                 
                 
 //                //OLED显示AD
 //                
@@ -261,7 +270,9 @@ void OLED_DisplayTask(void *pvParameters)
                 
                 
                 OLED_Update();
-                //========================
+                //OLED------------------------
+                
+                
                 xSemaphoreGive(xI2C2Mutex);  // 释放锁
             }
         }
@@ -329,8 +340,8 @@ int main(void)
 // =====================================================
     
     xPoseQueue_mpu6050 = xQueueCreate(1, sizeof(Pose_t_mpu6050));
-    xSerialTxQueue = xQueueCreate(128,4);
-    xSerialRxQueue = xQueueCreate(128,4);
+    xSerialRxQueue = xQueueCreate(256, sizeof(uint8_t));
+    xSerialTxQueue = xQueueCreate(256, sizeof(uint8_t));    
     
 //    xPoseQueue_AD = xQueueCreate(2, sizeof(uint16_t[4]));
     
@@ -343,28 +354,28 @@ int main(void)
 //                "LED",         // 任务名称
 //                128,           // 堆栈大小（字）
 //                NULL,          // 任务参数
-//                2,             // 优先级（数字越大优先级越高）
+//                2,             // 优先级（数字越大优先级越高）   (0-7)
 //                NULL);         // 任务句柄
 
 
 
     
     // OLED 显示任务
-    xTaskCreate(OLED_DisplayTask, "OLED", 128, NULL, 1, &xOLEDTaskHandle);
+    xTaskCreate(OLED_DisplayTask, "OLED", 1024, NULL, 2, &xOLEDTaskHandle);
     
     // MPU6050 任务
-    xTaskCreate(MPU6050_PoseTask, "MPU", 128, NULL, 2, &xMPUTaskHandle);
+    xTaskCreate(MPU6050_PoseTask, "MPU", 256, NULL, 3, &xMPUTaskHandle);
     
-    // PC3_led 任务
-    //xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led);
+    // PC13_led 任务
+    xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led);
     
 //    // AD 任务
 //    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);
     
     // SerialRx 任务
-    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 3,&vSerialRxTaskHandle);
+    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 2,&vSerialRxTaskHandle);
     // SerialTx 任务
-    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 1,&vSerialTxTaskHandle);
+    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 2,&vSerialTxTaskHandle);
     
     
 // =====================================================

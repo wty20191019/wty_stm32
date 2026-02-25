@@ -25,9 +25,9 @@
 #define configUSE_TICK_HOOK             0                                   /* 1: 启用时钟节拍钩子函数; 0: 禁用 */
 #define configCPU_CLOCK_HZ              ( ( unsigned long ) 72000000 )      /* CPU时钟频率: 72MHz (STM32F103) */
 #define configTICK_RATE_HZ              ( ( TickType_t ) 1000 )             /* 系统节拍频率: 1000Hz (1ms) */
-#define configMAX_PRIORITIES            ( 5 )                               /* 最大任务优先级数 (0-4, 0为最低) */
+#define configMAX_PRIORITIES            ( 8 )                               /* 最大任务优先级数 (0-7, 0为最低) */
 #define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 256 )          /* 空闲任务堆栈大小 (字) */
-#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 8 * 1024 ) )         /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
+#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 10 * 1024 ) )        /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
 #define configMAX_TASK_NAME_LEN         ( 16 )                              /* 任务名称最大长度 */
 #define configUSE_TRACE_FACILITY        0                                   /* 1: 启用可视化跟踪调试; 0: 禁用 (节省资源) */
 #define configUSE_16_BIT_TICKS          0                                   /* 1: 使用16位Tick计数器; 0: 使用32位Tick计数器 */
@@ -53,10 +53,10 @@
 #define INCLUDE_vTaskDelay              1    /* 包含相对延时函数vTaskDelay */
 
 //中断优先级配置    - Cortex-M3/M4内核特定(注意：Cortex-M3使用8位优先级寄存器，但STM32只使用高4位)
-#define configKERNEL_INTERRUPT_PRIORITY         255    /* 内核中断优先级: 255(最低) 对应优先级15 */
+#define configKERNEL_INTERRUPT_PRIORITY         (15<<4)    /* 内核中断优先级: 255(最低) 对应优先级15 */
 
 //可管理的中断最高优先级   (重要：不能设置为0！详见http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html)
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY    128
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    (8<<4)
 
 /*
 

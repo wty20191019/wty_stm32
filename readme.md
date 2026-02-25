@@ -5,14 +5,12 @@
 
 | 存储类型 | 计算方式 | 占用大小 | 总容量 | 使用率 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flash (ROM)** | Code + RO-data | 36.14 KB | 64 KB | **56.47%** |
-| **RAM** | RW-data + ZI-data | 7.08 KB | 20 KB | **35.39%** |
-
+| **Flash (ROM)** | Code + RO-data | 45.76 KB | 64 KB | **71.50%** |
+| **RAM** | RW-data + ZI-data | 13.10 KB | 20 KB | **65.50%** |
 
 
 
 ```c
-
 
 
 
@@ -26,7 +24,7 @@
 #include "semphr.h"                     //Base    FreeRTOS
 
 
-
+#include "Serial.h"                     //Base    hardware_Serial   USART   TTL
 
 #include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
 
@@ -56,7 +54,15 @@
 
 
 
+
+
 ```
+
+
+
+
+
+
 
 
 
