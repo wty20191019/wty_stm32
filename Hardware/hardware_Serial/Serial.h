@@ -4,7 +4,10 @@
 #include "stm32f10x.h"
 #include "FreeRTOS.h"
 #include "queue.h"
+                                         
 
+#define USART1_BaudRate      9600          //波特率  //9600  //19200  //38400
+                                           
 // 声明队列句柄
 extern QueueHandle_t xSerialRxQueue;
 extern QueueHandle_t xSerialTxQueue;

@@ -210,18 +210,14 @@ void OLED_DisplayTask(void *pvParameters)
     while(1)
     {
         
-        
-        
-        
-        
         if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 1) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , 10) == pdPASS
         {
 
             
-            Serial_Printf_Async("Pitch=%6.2f  Roll=%6.2f  Yaw=%6.2f\r\n",
-                    recv_pose_mpu6050.Pitch,
-                    recv_pose_mpu6050.Roll,
-                    recv_pose_mpu6050.Yaw);
+//            Serial_Printf_Async("Pitch=%6.2f  Roll=%6.2f  Yaw=%6.2f\r\n",
+//                    recv_pose_mpu6050.Pitch,
+//                    recv_pose_mpu6050.Roll,
+//                    recv_pose_mpu6050.Yaw);
 
 
 
@@ -341,7 +337,7 @@ int main(void)
     
     xPoseQueue_mpu6050 = xQueueCreate(1, sizeof(Pose_t_mpu6050));
     xSerialRxQueue = xQueueCreate(256, sizeof(uint8_t));
-    xSerialTxQueue = xQueueCreate(256, sizeof(uint8_t));    
+    xSerialTxQueue = xQueueCreate(256, sizeof(uint8_t));
     
 //    xPoseQueue_AD = xQueueCreate(2, sizeof(uint16_t[4]));
     
