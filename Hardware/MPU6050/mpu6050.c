@@ -90,12 +90,13 @@ uint8_t MPU_Set_Accel_Fsr(uint8_t fsr)
 uint8_t MPU_Set_LPF(u16 lpf)
 {
      uint8_t data=0;
-     if(lpf>=188)data=1;
-     else if(lpf>=98)data=2;
-     else if(lpf>=42)data=3;
-     else if(lpf>=20)data=4;
-     else if(lpf>=10)data=5;
-     else data=6; 
+     if(lpf>=200)     data=0;
+     else if(lpf>=188)data=1;
+     else if(lpf>=98) data=2;
+     else if(lpf>=42) data=3;
+     else if(lpf>=20) data=4;
+     else if(lpf>=10) data=5;
+     else             data=6; 
      mpu6050_write_reg(MPU_CFG_REG,data);//设置数字低通滤波器  
      return 0;
 }
@@ -110,7 +111,8 @@ uint8_t MPU_Set_Rate(u16 rate)
      if(rate<4)rate=4;
      data=1000/rate-1;
      mpu6050_write_reg(MPU_SAMPLE_RATE_REG,data);     //设置数字低通滤波器
-      return MPU_Set_LPF(rate/2);     //自动设置LPF为采样率的一半
+//      return MPU_Set_LPF(rate/2);     //自动设置LPF为采样率的一半
+      return MPU_Set_LPF(200);     //不滤波
 }
 
 void MPU6050_Init(void)
@@ -122,7 +124,7 @@ void MPU6050_Init(void)
     mpu6050_write_reg(PWR_MGMT_1,0X00);             //唤醒MPU6050 
     MPU_Set_Gyro_Fsr(3);                            //陀螺仪传感器,±2000dps
     MPU_Set_Accel_Fsr(0);                           //加速度传感器,±2g
-    MPU_Set_Rate(200);                              //设置采样率50Hz
+    MPU_Set_Rate(1000);                              //设置采样率1000Hz
     mpu6050_write_reg(MPU_INT_EN_REG,0X00);         //关闭所有中断
     mpu6050_write_reg(MPU_USER_CTRL_REG,0X00);      //I2C主模式关闭
     mpu6050_write_reg(MPU_FIFO_EN_REG,0X00);        //关闭FIFO
@@ -133,7 +135,7 @@ void MPU6050_Init(void)
     {
         mpu6050_write_reg(PWR_MGMT_1,0X01);         //设置CLKSEL,PLL X轴为参考
         mpu6050_write_reg(PWR_MGMT_2,0X00);         //加速度与陀螺仪都工作
-        MPU_Set_Rate(100);                          //设置采样率为50Hz
+        MPU_Set_Rate(1000);                         //设置采样率为1000Hz
     }
 }
  

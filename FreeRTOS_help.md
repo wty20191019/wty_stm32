@@ -96,11 +96,8 @@ int main(void)
     while(1);
 }
 ```
-
 ### 2. 任务函数结构
-
 任务函数必须是无限循环，并使用FreeRTOS延时函数：
-
 ```c
 void LED_Task(void *pvParameters)
 {
@@ -125,7 +122,6 @@ void LED_Task(void *pvParameters)
     }
 }
 ```
-
 ### 3. 任务延时函数
 
 #### **使用相对延时 (vTaskDelay) 当：**"每隔固定时间"执行一次
@@ -133,12 +129,10 @@ void LED_Task(void *pvParameters)
 2. 任务执行时间很短且变化不大
 3. 不需要精确的时间间隔
 4. 任务是非周期性的
-
 ```c
 // 相对延时：从调用时刻开始延时
 vTaskDelay(pdMS_TO_TICKS(100)); // 延时100ms
 ```
-
 ### **使用绝对延时 (vTaskDelayUntil) 当：**"暂停一段时间"
 1. 需要精确的固定周期（如数据采样、控制循环）
 2. 任务执行时间可能有变化，但需要稳定的执行间隔
@@ -148,7 +142,7 @@ vTaskDelay(pdMS_TO_TICKS(100)); // 延时100ms
 ```c
 // 绝对延时：保证精确的周期
 TickType_t xLastWakeTime = xTaskGetTickCount();
-const TickType_t xFrequency = pdMS_TO_TICKS(100);
+cont TickType_t xFrequency = pdMS_TO_TICKS(100);
 
 for(;;)
 {
@@ -156,26 +150,19 @@ for(;;)
     vTaskDelayUntil(&xLastWakeTime, xFrequency); // 精确100ms周期
 }
 ```
-
 ### 4. 任务优先级管理
-
 ```c
 // 设置任务优先级
 vTaskPrioritySet(xTaskHandle, newPriority);
-
 // 获取任务优先级
 UBaseType_t uxPriority = uxTaskPriorityGet(xTaskHandle);
-
 // 挂起任务
 vTaskSuspend(xTaskHandle);
-
 // 恢复任务
 vTaskResume(xTaskHandle);
-
 // 删除任务
 vTaskDelete(xTaskHandle);
 ```
-
 ## 四、任务间通信
 
 ### 1. 消息队列
@@ -598,3 +585,50 @@ void Wrapped_Task(void *pvParameters)
       ^10ms         ^30ms            ^10ms         ^30ms
 间隔： 100ms         100ms            100ms         100ms
 ```
+
+
+
+
+
+## 1. **vTaskSuspend() - 挂起任务**
+
+将指定任务从运行状态切换到**挂起状态**。挂起的任务不会执行，也不会占用CPU时间。
+
+```c
+void vTaskSuspend(TaskHandle_t xTaskToSuspend);
+```
+
+- `xTaskToSuspend`: 要挂起的任务的句柄。使用 `NULL` 表示挂起**调用该函数的任务自身**。
+
+
+## 2. **vTaskResume() - 恢复任务**
+
+恢复一个被挂起的任务，使其重新进入就绪状态。
+
+只能恢复被 `vTaskSuspend()` 挂起的任务，**不能**恢复被其他原因阻塞的任务（如等待信号量、队列等）。
+- `xTaskToResume`: 要恢复的任务的句柄。
+```c
+void vTaskResume(TaskHandle_t xTaskToResume);
+```
+
+
+## 3. **vTaskDelete() - 删除任务**
+
+- 删除指定的任务，释放其占用的内存（堆栈和TCB）。
+- 删除的任务必须**不再运行**2. 被删除任务分配的内存会在**空闲任务**中被回收3. 如果任务持有资源（如互斥锁、内存块），删除前需要手动释放
+- `xTaskToDelete`: 要删除的任务的句柄。使用 `NULL` 表示删除**调用该函数的任务自身**。
+```c
+void vTaskDelete(TaskHandle_t xTaskToDelete);
+```
+
+
+## 4. **vTaskPrioritySet() - 设置任务优先级**
+
+- 动态改变指定任务的优先级。
+- `xTask`: 要修改的任务句柄
+- `uxNewPriority`: 新的优先级值（0为最低，`configMAX_PRIORITIES-1`为最高）
+```c
+void vTaskPrioritySet(TaskHandle_t xTask, UBaseType_t uxNewPriority);
+```
+
+

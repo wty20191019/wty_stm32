@@ -124,15 +124,6 @@ SemaphoreHandle_t xI2C2Mutex;
 
 
 
-
-
-
-
-
-
-
-
-
 // 接收任务：处理串口接收的数据
 void vSerialRxTask(void *pvParameters)
 {
@@ -146,7 +137,7 @@ void vSerialRxTask(void *pvParameters)
             
             Serial_Printf_Async("%c(0x%02X)\r\n", ucRxData, ucRxData);
         }
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
 
@@ -165,7 +156,7 @@ void vSerialTxTask(void *pvParameters)
             while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
             USART_ClearFlag(USART1, USART_FLAG_TC);
         }
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
 
@@ -173,7 +164,7 @@ void vSerialTxTask(void *pvParameters)
 // PC13_led 任务
 void Test_PC13_ledTask(void *pvParameters)
 {
-    const TickType_t xFrequency = pdMS_TO_TICKS(20);
+    const TickType_t xFrequency = pdMS_TO_TICKS(50);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);GPIO_InitTypeDef GPIO_InitStructure;GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;GPIO_Init(GPIOC, &GPIO_InitStructure);
@@ -195,7 +186,7 @@ void MPU6050_PoseTask(void *pvParameters)
     Pose_t_mpu6050 pose;
     static Pose_t_mpu6050 last_pose = {0};
     
-    const TickType_t xFrequency = pdMS_TO_TICKS(2);
+    const TickType_t xFrequency = pdMS_TO_TICKS(5);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
     while(1)
@@ -365,7 +356,7 @@ int main(void)
 // 创建队列
 // =====================================================
     
-    xPoseQueue_mpu6050 = xQueueCreate(1, sizeof(Pose_t_mpu6050));
+    xPoseQueue_mpu6050 = xQueueCreate(4, sizeof(Pose_t_mpu6050));
     xSerialRxQueue = xQueueCreate(256, sizeof(uint8_t));
     xSerialTxQueue = xQueueCreate(256, sizeof(uint8_t));
     
@@ -387,26 +378,27 @@ int main(void)
 
     
     // OLED 显示任务
-    xTaskCreate(OLED_DisplayTask, "OLED", 1024, NULL, 2, &xOLEDTaskHandle);
+    xTaskCreate(OLED_DisplayTask, "OLED", 1024, NULL, 2, &xOLEDTaskHandle);        
     
     // MPU6050 任务
-    xTaskCreate(MPU6050_PoseTask, "MPU", 256, NULL, 3, &xMPUTaskHandle);
+    xTaskCreate(MPU6050_PoseTask, "MPU", 256, NULL, 3, &xMPUTaskHandle);      
     
     // PC13_led 任务
-    xTaskCreate(Test_PC13_ledTask, "led_PC13", 64, NULL, 1, &PC13_led);
+    xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led );   
     
 //    // AD 任务
 //    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);
     
     // SerialRx 任务
-    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 2,&vSerialRxTaskHandle);
+    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 2,&vSerialRxTaskHandle);      
     // SerialTx 任务
-    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 2,&vSerialTxTaskHandle);
+    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 2,&vSerialTxTaskHandle);   
     
 //    // Encoder2 任务
 //    xTaskCreate(Encoder2Task, "Encoder2", 256, NULL, 1,&vEncoder2TaskHandle);
     
-    
+     //Program Size: Code=39884 RO-data=6892 RW-data=232 ZI-data=13184  
+     //Program Size: Code=39864 RO-data=6888 RW-data=212 ZI-data=13188  
 // =====================================================
     vTaskStartScheduler();  //启动调度
 // =====================================================
