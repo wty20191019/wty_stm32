@@ -12,8 +12,9 @@
 #include "queue.h"                      //Base    FreeRTOS
 #include "semphr.h"                     //Base    FreeRTOS
 
-
 #include "Serial.h"                     //Base    hardware_Serial   USART   TTL
+
+
 
 #include "hardware_I2C.h"                   //Base    hardware_I2Cx        (I2C1_I2C2)
 
@@ -60,7 +61,7 @@ TaskHandle_t PC13_led;
 //TaskHandle_t xADTaskHandle;
 TaskHandle_t vSerialRxTaskHandle;
 TaskHandle_t vSerialTxTaskHandle;
-
+//TaskHandle_t vEncoder2TaskHandle;
 
 // 互斥量
 
@@ -100,6 +101,38 @@ SemaphoreHandle_t xI2C2Mutex;
 
 
 
+
+//// Encoder2 任务
+//void Encoder2Task(void *pvParameters)
+//{
+//    const TickType_t xFrequency = pdMS_TO_TICKS(50);
+//    TickType_t xLastWakeTime = xTaskGetTickCount();
+//    
+//    while(1)
+//    {
+//        
+//        int16_t Temp ;
+//        Temp = 1;
+//        Serial_Printf_Async("%3d\r\n" ,Encoder2_TIM4_Encoder_Get());
+//        
+//        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+//    }
+//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // 接收任务：处理串口接收的数据
 void vSerialRxTask(void *pvParameters)
 {
@@ -111,7 +144,7 @@ void vSerialRxTask(void *pvParameters)
         {
             
             
-            Serial_Printf_Async("Received: %c (0x%02X)\r\n", ucRxData, ucRxData);
+            Serial_Printf_Async("%c(0x%02X)\r\n", ucRxData, ucRxData);
         }
         vTaskDelay(pdMS_TO_TICKS(1));
     }
@@ -140,24 +173,16 @@ void vSerialTxTask(void *pvParameters)
 // PC13_led 任务
 void Test_PC13_ledTask(void *pvParameters)
 {
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
+    const TickType_t xFrequency = pdMS_TO_TICKS(20);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);GPIO_InitTypeDef GPIO_InitStructure;GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;GPIO_Init(GPIOC, &GPIO_InitStructure);
     
     while(1)
     {
-        if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0)
-        {
-        GPIO_SetBits(GPIOC, GPIO_Pin_13);
-        }
-        else
-        {
-        GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-        }
-        vTaskDelay(pdMS_TO_TICKS(20));
+        if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0){GPIO_SetBits(GPIOC, GPIO_Pin_13);}else{GPIO_ResetBits(GPIOC, GPIO_Pin_13);}
+        
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
 
@@ -169,6 +194,7 @@ void MPU6050_PoseTask(void *pvParameters)
     float Pitch, Roll, Yaw;
     Pose_t_mpu6050 pose;
     static Pose_t_mpu6050 last_pose = {0};
+    
     const TickType_t xFrequency = pdMS_TO_TICKS(2);
     TickType_t xLastWakeTime = xTaskGetTickCount();
     
@@ -185,7 +211,10 @@ void MPU6050_PoseTask(void *pvParameters)
             pose.Roll = Roll;
             pose.Yaw = Yaw;
             
+            
+            
             xQueueOverwrite(xPoseQueue_mpu6050, &pose);
+             
         }
          else
         {
@@ -204,13 +233,14 @@ void OLED_DisplayTask(void *pvParameters)
 {
     Pose_t_mpu6050 recv_pose_mpu6050;
 //    uint16_t recv_data_AD[4];
+
     const TickType_t xFrequency = pdMS_TO_TICKS(50);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while(1)
     {
         
-        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 1) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , 10) == pdPASS
+        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , pdMS_TO_TICKS(1)) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , pdMS_TO_TICKS(10) ) == pdPASS
         {
 
             
@@ -303,11 +333,11 @@ int main(void)
     
     Serial_Init();                      OLED_ShowNum(0,3,4,1,OLED_8X16);OLED_Update();
     
-      
+
     
 
 
-
+//    Encoder2_TIM4_Init();               OLED_ShowNum(0,3,5,1,OLED_8X16);OLED_Update();
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
@@ -363,7 +393,7 @@ int main(void)
     xTaskCreate(MPU6050_PoseTask, "MPU", 256, NULL, 3, &xMPUTaskHandle);
     
     // PC13_led 任务
-    xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led);
+    xTaskCreate(Test_PC13_ledTask, "led_PC13", 64, NULL, 1, &PC13_led);
     
 //    // AD 任务
 //    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);
@@ -373,19 +403,20 @@ int main(void)
     // SerialTx 任务
     xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 2,&vSerialTxTaskHandle);
     
+//    // Encoder2 任务
+//    xTaskCreate(Encoder2Task, "Encoder2", 256, NULL, 1,&vEncoder2TaskHandle);
+    
     
 // =====================================================
     vTaskStartScheduler();  //启动调度
-//------------------------------------------------------
+// =====================================================
 
 
 
 
 
-    while (1)//主循环=============================================================================
+    while (1)//主循环=====================================================
     {
-        
-        //DWT_Delay_s(1);
         
     }
 

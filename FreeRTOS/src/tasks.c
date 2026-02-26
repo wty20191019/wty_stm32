@@ -3750,15 +3750,22 @@ void vTaskStartScheduler( void )
         /* This line will only be reached if the kernel could not be started,
          * because there was not enough FreeRTOS heap to create the idle task
          * or the timer task. */
+        /* 只有当内核无法启动时，才会执行此行代码，
+         * 因为FreeRTOS的堆内存不足以创建空闲任务
+         * 或者定时任务。 */
         configASSERT( xReturn != errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY );
     }
 
     /* Prevent compiler warnings if INCLUDE_xTaskGetIdleTaskHandle is set to 0,
      * meaning xIdleTaskHandles are not used anywhere else. */
+    /* 如果INCLUDE_xTaskGetIdleTaskHandle设置为0，则防止编译器出现警告，
+     * 意味着xIdleTaskHandles未在其他任何地方使用。 */
     ( void ) xIdleTaskHandles;
 
     /* OpenOCD makes use of uxTopUsedPriority for thread debugging. Prevent uxTopUsedPriority
      * from getting optimized out as it is no longer used by the kernel. */
+    /* OpenOCD使用uxTopUsedPriority进行线程调试。防止uxTopUsedPriority
+     * 因为它不再被内核使用，所以不会被优化掉。 */
     ( void ) uxTopUsedPriority;
 
     traceRETURN_vTaskStartScheduler();
