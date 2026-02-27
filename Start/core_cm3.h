@@ -1680,7 +1680,16 @@ static __INLINE void NVIC_DecodePriority (uint32_t Priority, uint32_t PriorityGr
 /* ##################################    SysTick function  ############################################ */
 
 #if (!defined (__Vendor_SysTickConfig)) || (__Vendor_SysTickConfig == 0)
-
+/**
+ * @brief 初始化并启动SysTick计数器及其中断。
+ *
+ * @param   ticks  两次中断之间的时钟节拍数
+ * @return  1 = 失败，0 = 成功
+ *
+ * 初始化系统时钟定时器及其中断，并启动
+ * 系统节拍定时器/计数器在自由运行模式下生成
+ * 周期性中断。
+ */
 /**
  * @brief  Initialize and start the SysTick counter and its interrupt.
  *
@@ -1691,6 +1700,7 @@ static __INLINE void NVIC_DecodePriority (uint32_t Priority, uint32_t PriorityGr
  * system tick timer / counter in free running mode to generate 
  * periodical interrupts.
  */
+ 
 static __INLINE uint32_t SysTick_Config(uint32_t ticks)
 { 
   if (ticks > SysTick_LOAD_RELOAD_Msk)  return (1);            /* Reload value impossible */

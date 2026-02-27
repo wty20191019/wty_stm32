@@ -262,10 +262,10 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //===================================================================================================
 
 
-    SCH_AddTask(Serial_ParseFrame   ,10     ,8      ,TaskDelayUntil);
-    SCH_AddTask(Test_PC13_LED       ,50     ,9      ,TaskDelayUntil);
-    SCH_AddTask(MPU6050_PoseTask    ,10     ,7      ,TaskDelayUntil);
-    SCH_AddTask(OLED_DisplayTask    ,20     ,8      ,TaskDelayUntil);
+    SCH_AddTask(Serial_ParseFrame   ,10    ,8      );
+    SCH_AddTask(Test_PC13_LED       ,20     ,9      );
+    SCH_AddTask(MPU6050_PoseTask    ,10     ,7      );
+    SCH_AddTask(OLED_DisplayTask    ,50     ,8      );
     
 
 // 启动调度器========================================================================================
