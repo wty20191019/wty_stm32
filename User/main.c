@@ -3,15 +3,13 @@
 //===================================================================================================
 
 #include "stm32f10x.h"                  //Device header
+#include "systick_scheduler.h"          //Base    systick
 #include "DWT_Delay.h"                  //Base    DWT
 #include "math.h"
 #include "string.h"
 #include "stdlib.h" 
 
-#include "FreeRTOS.h"                   //Base    FreeRTOS
-#include "task.h"                       //Base    FreeRTOS
-#include "queue.h"                      //Base    FreeRTOS
-#include "semphr.h"                     //Base    FreeRTOS
+#include "PC13_LED.h"                   //Base    PC13
 
 #include "Serial.h"                     //Base    hardware_Serial   USART   TTL
 
@@ -45,143 +43,131 @@
 
 #define PI 3.141592653589793
 
-
-
-
-//=====FreeRTOS=====//
-typedef struct {
+typedef struct
+{
     float Pitch;
     float Roll;
     float Yaw;
-} Pose_t_mpu6050;
+} pose_of_Pitch_Roll_Yaw;
 
-// 队列句柄
-QueueHandle_t xPoseQueue_mpu6050;
-
-
-// 任务句柄
-TaskHandle_t xMPUTaskHandle;
-TaskHandle_t xOLEDTaskHandle;
-TaskHandle_t xPC13LedTaskHandle;
-TaskHandle_t vSerialRxTaskHandle;
-TaskHandle_t vSerialTxTaskHandle;
-
-// 互斥量
-SemaphoreHandle_t xI2C2Mutex;
+pose_of_Pitch_Roll_Yaw recv_pose_mpu6050;
 
 
 
-
+// 串口接收帧解析状态变量
+#define     RX_BUFFER_SIZE              64  // 帧解析缓冲区大小
+uint8_t     rxBuffer[RX_BUFFER_SIZE];       
+uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧
+uint16_t    rxIndex;                        // 帧数据索引
 
 
 //===================================================================================================
-// 串口接收任务
+// 串口接收帧解析任务
 //===================================================================================================
-void vSerialRxTask(void *pvParameters)
+void Serial_ParseFrame(void)
 {
-    uint8_t ucRxData;
-    uint8_t rxBuffer[128];
-    uint16_t rxIndex = 0;
-    bool inFrame = false;
+    uint8_t ucRxData[USART1_RX_BUF_SIZE] = {0};  // 临时接收缓冲区
+    uint16_t ucRxLen = 0;
     
-    while(1)
+    // 读取串口接收的数据（无数据则直接返回）
+    if (Serial_GetRxData(ucRxData, &ucRxLen) == 0)
     {
-        if (xQueueReceive(xSerialRxQueue, &ucRxData, portMAX_DELAY) == pdPASS)
+        return;
+    }
+    
+    // 遍历接收到的每一个字节，逐字节解析帧
+    for (uint16_t i = 0; i < ucRxLen; i++)
+    {
+        uint8_t byte = ucRxData[i];
+        
+        // 检查是否为帧起始标记 '['
+        if (byte == '[')
         {
-            // 检查是否为帧起始标记 '['
-            if(ucRxData == '[')
+            inFrame = 1;          // 标记进入帧接收状态
+            rxIndex = 0;          // 重置帧数据索引
+            memset(rxBuffer, 0, RX_BUFFER_SIZE);  // 清空帧缓冲区
+            continue;
+        }
+        // 检查是否为帧结束标记 ']'
+        else if (byte == ']')
+        {
+            if (inFrame && rxIndex > 0)  // 有效帧（有数据且在帧内）
             {
-                inFrame = true;
-                rxIndex = 0;
-                continue;
-            }
-            // 检查是否为帧结束标记 ']'
-            else if (ucRxData == ']')
-            {
-                if (inFrame && rxIndex > 0)
+                rxBuffer[rxIndex] = '\0';  // 添加字符串结束符
+                
+                // 打印接收到的完整帧内容
+                Serial_Printf("[%s]\r\n", rxBuffer);
+                
+                // 解析帧内容
+                char *Tag = strtok((char *)rxBuffer, ",");
+                if (Tag != NULL)  // 防止空数据导致strtok返回NULL
                 {
-                    rxBuffer[rxIndex] = '\0';
-                    
-                    // 打印接收到的完整帧内容
-                    Serial_Printf_Async("[%s]\r\n", rxBuffer);
-                    
-                    // 解析帧内容
-                    char *Tag = strtok((char *)rxBuffer, ",");
-                    
+                    // 解析key指令：[key,1,up] 或 [key,2,down]
                     if (strcmp(Tag, "key") == 0)
                     {
                         char *Name = strtok(NULL, ",");
                         char *Action = strtok(NULL, ",");
                         
-                        if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
+                        if (Name != NULL && Action != NULL)
                         {
-                            Serial_Printf_Async("key,1,up\r\n");
-                            
-                        }
-                        else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
-                        {
-                            Serial_Printf_Async("key,2,down\r\n");
-                            
+                            if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
+                            {
+                                Serial_Printf("key,1,up\r\n");
+                            }
+                            else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
+                            {
+                                Serial_Printf("key,2,down\r\n");
+                            }
                         }
                     }
+                    // 解析slider指令：[slider,1,100] 或 [slider,2,0.5]
                     else if (strcmp(Tag, "slider") == 0)
                     {
                         char *Name = strtok(NULL, ",");
                         char *Value = strtok(NULL, ",");
                         
-                        if (strcmp(Name, "1") == 0)
+                        if (Name != NULL && Value != NULL)
                         {
-                            uint8_t IntValue = atoi(Value);
-                            Serial_Printf_Async("slider,1,%d\r\n", IntValue);
-                        }
-                        else if (strcmp(Name, "2") == 0)
-                        {
-                            float FloatValue = atof(Value);
-                            Serial_Printf_Async("slider,2,%f\r\n", FloatValue);
+                            if (strcmp(Name, "1") == 0)
+                            {
+                                uint8_t IntValue = atoi(Value);
+                                Serial_Printf("slider,1,%d\r\n", IntValue);
+                            }
+                            else if (strcmp(Name, "2") == 0)
+                            {
+                                float FloatValue = atof(Value);
+                                Serial_Printf("slider,2,%.2f\r\n", FloatValue);  // 保留2位小数
+                            }
                         }
                     }
+                    // 解析joystick指令：[joystick,10,-5,8,-3]
                     else if (strcmp(Tag, "joystick") == 0)
                     {
-                        int8_t LH = atoi(strtok(NULL, ","));
-                        int8_t LV = atoi(strtok(NULL, ","));
-                        int8_t RH = atoi(strtok(NULL, ","));
-                        int8_t RV = atoi(strtok(NULL, ","));
+                        char *LH_str = strtok(NULL, ",");
+                        char *LV_str = strtok(NULL, ",");
+                        char *RH_str = strtok(NULL, ",");
+                        char *RV_str = strtok(NULL, ",");
                         
-                        Serial_Printf_Async("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
+                        if (LH_str && LV_str && RH_str && RV_str)
+                        {
+                            int8_t LH = atoi(LH_str);
+                            int8_t LV = atoi(LV_str);
+                            int8_t RH = atoi(RH_str);
+                            int8_t RV = atoi(RV_str);
+                            
+                            Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
+                        }
                     }
-                    
-                    inFrame = false;
-                    rxIndex = 0;
-                }
-                else
-                {
-                    inFrame = false;
-                    rxIndex = 0;
                 }
             }
-            // 如果正在接收帧且不是帧结束标记，则存储数据
-            else if (inFrame && rxIndex < (sizeof(rxBuffer) - 1))
-            {
-                rxBuffer[rxIndex++] = ucRxData;
-            }
+            // 重置帧状态
+            inFrame = 0;
+            rxIndex = 0;
         }
-    }
-}
-
-//===================================================================================================
-// 串口发送任务
-//===================================================================================================
-void vSerialTxTask(void *pvParameters)
-{
-    uint8_t ucTxData;
-    
-    while(1)
-    {
-        if (xQueueReceive(xSerialTxQueue, &ucTxData, portMAX_DELAY) == pdPASS)         
+        // 正在接收帧内数据，且缓冲区未满
+        else if (inFrame && rxIndex < (RX_BUFFER_SIZE - 1))
         {
-            USART_SendData(USART1, ucTxData);
-            while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-            USART_ClearFlag(USART1, USART_FLAG_TC);
+            rxBuffer[rxIndex++] = byte;  // 存储帧数据
         }
     }
 }
@@ -190,113 +176,54 @@ void vSerialTxTask(void *pvParameters)
 //===================================================================================================
 // PC13 LED任务
 //===================================================================================================
-void Test_PC13_ledTask(void *pvParameters)
+void Test_PC13_LED(void)
 {
-    const TickType_t xFrequency = pdMS_TO_TICKS(50);  
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-
-    GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-
-    while(1)
-    {
-        // 翻转PC13引脚状态
-        if(GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == Bit_SET)
-        {
-            GPIO_ResetBits(GPIOC, GPIO_Pin_13);  
-        }
-        else
-        {
-            GPIO_SetBits(GPIOC, GPIO_Pin_13);    
-        }
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    }
+PC13_LED_Turn();
 }
-
-
 
 //===================================================================================================
 // MPU6050任务
 //===================================================================================================
-void MPU6050_PoseTask(void *pvParameters)
+void MPU6050_PoseTask(void)
 {
-    float Pitch, Roll, Yaw;
-    Pose_t_mpu6050 pose;
-    
-    const TickType_t xFrequency = pdMS_TO_TICKS(10);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    
-    while(1)
-    {
-        if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(2)) == pdTRUE)
-        {
-            MPU6050_DMP_Get_Data(&Pitch, &Roll, &Yaw);
-            xSemaphoreGive(xI2C2Mutex);
-            
-            pose.Pitch = Pitch;
-            pose.Roll = Roll;
-            pose.Yaw = Yaw;
-            
-            xQueueOverwrite(xPoseQueue_mpu6050, &pose);
-            //xQueueSend(xPoseQueue_mpu6050, &pose,pdMS_TO_TICKS(2));
-        }
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    }
+    MPU6050_DMP_Get_Data(   &recv_pose_mpu6050.Pitch,
+                            &recv_pose_mpu6050.Roll,
+                            &recv_pose_mpu6050.Yaw);
 }
 
 //===================================================================================================
 // OLED显示任务
 //===================================================================================================
-void OLED_DisplayTask(void *pvParameters)
+void OLED_DisplayTask(void)
 {
-    Pose_t_mpu6050 recv_pose_mpu6050;
+    OLED_Clear(); 
+//------------------------------------
+    // OLED显示数字滚动
+    static uint16_t i = 0;
+    OLED_ShowNum(i*8, 0, i, 1, OLED_8X16);
+    i++;
+    i = (i > 9 ? 0 : i);
+
+    // OLED显示mpu6050数据
+    int_fast8_t y_p1, y_p2, Yaw_p;
+    y_p1 = 32 + 32 * (recv_pose_mpu6050.Pitch / 90.0);
+    y_p2 = 63 * tan(recv_pose_mpu6050.Roll * PI / 180.0);
+    Yaw_p = 63 + 63 * (recv_pose_mpu6050.Yaw / 180.0); 
+
+    OLED_ShowString(6*16, 8*3, "Pitch", OLED_6X8);
+    OLED_ShowFloatNum(6*15, 8*4, recv_pose_mpu6050.Pitch, 2, 2, OLED_6X8);
+    OLED_ShowString(6*0, 8*3, "Roll", OLED_6X8);
+    OLED_ShowFloatNum(6*0, 8*4, recv_pose_mpu6050.Roll, 2, 2, OLED_6X8);
+    OLED_ShowString(6*7 + (Yaw_p-51), 8*6, "Yaw", OLED_6X8);
+    OLED_ShowFloatNum(6*11 + (Yaw_p-87), 8*7, recv_pose_mpu6050.Yaw, 2, 2, OLED_6X8);
+
+    OLED_DrawLine(0, 31, 127, 31);
+    OLED_DrawLine(63, 0, 63, 63);
+    OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
+    OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
     
-    const TickType_t xFrequency = pdMS_TO_TICKS(50);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    
-    while(1)
-    {
-        if(xQueueReceive(xPoseQueue_mpu6050, &recv_pose_mpu6050, 0) == pdPASS)
-        {
-            OLED_Clear(); 
-            
-            // OLED显示数字滚动
-            static uint16_t i = 0;
-            OLED_ShowNum(i*8, 0, i, 1, OLED_8X16);
-            i++;
-            i = (i > 9 ? 0 : i);
-            
-            // OLED显示mpu6050数据
-            int_fast8_t y_p1, y_p2, Yaw_p;
-            y_p1 = 32 + 32 * (recv_pose_mpu6050.Pitch / 90.0);
-            y_p2 = 63 * tan(recv_pose_mpu6050.Roll * PI / 180.0);
-            Yaw_p = 63 + 63 * (recv_pose_mpu6050.Yaw / 180.0); 
-            
-            OLED_ShowString(6*16, 8*3, "Pitch", OLED_6X8);
-            OLED_ShowFloatNum(6*15, 8*4, recv_pose_mpu6050.Pitch, 2, 2, OLED_6X8);
-            OLED_ShowString(6*0, 8*3, "Roll", OLED_6X8);
-            OLED_ShowFloatNum(6*0, 8*4, recv_pose_mpu6050.Roll, 2, 2, OLED_6X8);
-            OLED_ShowString(6*7 + (Yaw_p-51), 8*6, "Yaw", OLED_6X8);
-            OLED_ShowFloatNum(6*11 + (Yaw_p-87), 8*7, recv_pose_mpu6050.Yaw, 2, 2, OLED_6X8);
-            
-            OLED_DrawLine(0, 31, 127, 31);
-            OLED_DrawLine(63, 0, 63, 63);
-            OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
-            OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
-            
-            if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)
-            {
-                OLED_Update();
-                xSemaphoreGive(xI2C2Mutex);
-            }
-        }
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-    }
+//------------------------------------
+    OLED_Update();
 }
 
 
@@ -308,24 +235,17 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //===================================================================================================
 // 模块初始化
 //===================================================================================================
-DWT_Delay_Init();
 
-I2C_QuickInit(I2C2, 400*1000);
+    DWT_Delay_Init();
+    SCH_Init();
+    I2C_QuickInit(I2C2, 400*1000);
+    OLED_Init();                    OLED_ShowNum(0, 1, 1, 1, OLED_8X16);OLED_Update();
+    PC13_LED_Init();                OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
+    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
+    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
 
-OLED_Init();
-OLED_ShowNum(0, 1, 1, 1, OLED_8X16);OLED_Update();
+//    Serial_Init();          OLED_ShowNum(0, 3, 5, 1, OLED_8X16);OLED_Update();
 
-
-MPU6050_Init();
-OLED_ShowNum(0, 2, 2, 1, OLED_8X16);OLED_Update();
-
-
-MPU6050_DMP_Init();
-OLED_ShowNum(0, 3, 3, 1, OLED_8X16);OLED_Update();
-
-
-Serial_Init();
-OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
 
 
 
@@ -334,46 +254,27 @@ OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
 //    Encoder2_TIM4_Init();
-//    AD_DMA_Init();
-
-
-
-
+//    AD_DMA_Init();  
 
 
 //===================================================================================================
-// FreeRTOS初始化
+//systick 调度器
 //===================================================================================================
-// 创建互斥量====================================
-xI2C2Mutex = xSemaphoreCreateMutex();
-
-// 创建队列======================================
-xPoseQueue_mpu6050 = xQueueCreate(4, sizeof(Pose_t_mpu6050));
-xSerialRxQueue = xQueueCreate(128, sizeof(uint8_t));
-xSerialTxQueue = xQueueCreate(128, sizeof(uint8_t));
-
-// 创建任务=======================================
-//    xTaskCreate(LED_Task,      // 任务函数
-//                "LED",         // 任务名称
-//                128,           // 堆栈大小（字）
-//                NULL,          // 任务参数
-//                2,             // 优先级（数字越大优先级越高）   (0-7)
-//                NULL);         // 任务句柄
-
-xTaskCreate(Test_PC13_ledTask,   "led_PC13",  32    , NULL, 4, &xPC13LedTaskHandle);
-xTaskCreate(OLED_DisplayTask,    "OLED",      1024  , NULL, 3, &xOLEDTaskHandle);
-xTaskCreate(MPU6050_PoseTask,    "MPU",       256   , NULL, 2, &xMPUTaskHandle);
-xTaskCreate(vSerialRxTask,       "SerialRx",  256   , NULL, 3, &vSerialRxTaskHandle);
-xTaskCreate(vSerialTxTask,       "SerialTx",  256   , NULL, 3, &vSerialTxTaskHandle);
 
 
-// 启动调度器
-vTaskStartScheduler();//==============================================================================
+    SCH_AddTask(Serial_ParseFrame   ,10     ,8      ,TaskDelayUntil);
+    SCH_AddTask(Test_PC13_LED       ,50     ,9      ,TaskDelayUntil);
+    SCH_AddTask(MPU6050_PoseTask    ,10     ,7      ,TaskDelayUntil);
+    SCH_AddTask(OLED_DisplayTask    ,20     ,8      ,TaskDelayUntil);
+    
 
+// 启动调度器========================================================================================
+SCH_Start();
+//===================================================================================================
 
     while(1)
     {
-        
+        DWT_Delay_us(1);
     }
 }
 
