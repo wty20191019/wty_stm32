@@ -5,7 +5,9 @@
 
 #include "stm32f10x.h"                  //Device header
 #include "DWT_Delay.h"                  //Base    DWT
-#include "math.h" 
+#include "math.h"
+#include "string.h"
+#include "stdlib.h" 
 
 #include "FreeRTOS.h"                   //Base    FreeRTOS
 #include "task.h"                       //Base    FreeRTOS
@@ -99,9 +101,6 @@ SemaphoreHandle_t xI2C2Mutex;
 
 
 
-
-
-
 //// Encoder2 任务
 //void Encoder2Task(void *pvParameters)
 //{
@@ -125,75 +124,129 @@ SemaphoreHandle_t xI2C2Mutex;
 
 
 // 接收任务：处理串口接收的数据
-void vSerialRxTask(void *pvParameters)
+void vSerialRxTask(void  *pvParameters )
 {
     uint8_t ucRxData;
-    
-    while(1)
+    uint8_t rxBuffer[128];
+    uint16_t rxIndex = 0;
+    while (1)
     {
-        if (xQueueReceive(xSerialRxQueue, &ucRxData, pdMS_TO_TICKS(10)) == pdPASS)
+        
+        if (xQueueReceive(xSerialRxQueue, &ucRxData, portMAX_DELAY ) == pdPASS)
         {
             
+            if (ucRxData == '\r' || ucRxData == '\n'  || ucRxData == ']'  )
+            {
+                if (rxIndex > 0)
+                {
+                    rxBuffer[rxIndex] = '\0';
+                    //============================================================
+                    
+                    
+                    Serial_Printf_Async("%s\r\n", rxBuffer);
+                    
+                    //-----------
+                    
+//                    char *Tag = strtok((char *)rxBuffer, ",");
+//                    if (strcmp(Tag, "key") == 0)
+//                    {
+//                        char *Name = strtok(NULL, ",");
+//                        char *Action = strtok(NULL, ",");
+//                        
+//                        if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
+//                        {
+//                            Serial_Printf_Async("key,1,up\r\n");
+//                        }
+//                        else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
+//                        {
+//                            Serial_Printf_Async("key,2,down\r\n");
+//                        }
+//                    }
+//                    else if (strcmp(Tag, "slider") == 0)
+//                    {
+//                        char *Name = strtok(NULL, ",");
+//                        char *Value = strtok(NULL, ",");
+//                        
+//                        if (strcmp(Name, "1") == 0)
+//                        {
+//                            uint8_t IntValue = atoi(Value);
+//                            
+//                            Serial_Printf_Async("slider,1,%d\r\n", IntValue);
+//                        }
+//                        else if (strcmp(Name, "2") == 0)
+//                        {
+//                            float FloatValue = atof(Value);
+//                            
+//                            Serial_Printf_Async("slider,2,%f\r\n", FloatValue);
+//                        }
+//                    }
+//                    else if (strcmp(Tag, "joystick") == 0)
+//                    {
+//                        int8_t LH = atoi(strtok(NULL, ","));
+//                        int8_t LV = atoi(strtok(NULL, ","));
+//                        int8_t RH = atoi(strtok(NULL, ","));
+//                        int8_t RV = atoi(strtok(NULL, ","));
+//                        
+//                        Serial_Printf_Async("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
+//                    }
             
-            Serial_Printf_Async("%c(0x%02X)\r\n", ucRxData, ucRxData);
+                    //============================================================
+                    rxIndex = 0;
+                }
+            }
+            else if (rxIndex < (sizeof(rxBuffer) - 1))
+            {
+                rxBuffer[rxIndex++] = ucRxData;
+            }
         }
-        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
-
 
 // 发送任务：处理串口发送的数据
 void vSerialTxTask(void *pvParameters)
 {
-    
     uint8_t ucTxData;
     
     while(1)
     {
-        if (xQueueReceive(xSerialTxQueue, &ucTxData, pdMS_TO_TICKS(10)) == pdPASS)
+        if (xQueueReceive(xSerialTxQueue, &ucTxData,  portMAX_DELAY  ) == pdPASS)         
         {
             USART_SendData(USART1, ucTxData);
             while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
             USART_ClearFlag(USART1, USART_FLAG_TC);
         }
-        vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
-
 
 // PC13_led 任务
 void Test_PC13_ledTask(void *pvParameters)
 {
     const TickType_t xFrequency = pdMS_TO_TICKS(50);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
+          TickType_t xLastWakeTime = xTaskGetTickCount();
     
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);GPIO_InitTypeDef GPIO_InitStructure;GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;GPIO_Init(GPIOC, &GPIO_InitStructure);
     
     while(1)
     {
-        if (GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == 0){GPIO_SetBits(GPIOC, GPIO_Pin_13);}else{GPIO_ResetBits(GPIOC, GPIO_Pin_13);}
+        
+        GPIO_WriteBit(GPIOC,GPIO_Pin_13,(GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == Bit_SET) ? Bit_RESET : Bit_SET);
         
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
-
-
 
 // MPU6050 任务
 void MPU6050_PoseTask(void *pvParameters)
 {
     float Pitch, Roll, Yaw;
     Pose_t_mpu6050 pose;
-    static Pose_t_mpu6050 last_pose = {0};
     
-    const TickType_t xFrequency = pdMS_TO_TICKS(5);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS (2);
+          TickType_t xLastWakeTime = xTaskGetTickCount();
     
     while(1)
     {
-        
-        
-        if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(5)) == pdTRUE)// 获取I2C互斥锁
+        if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(2)) == pdTRUE) // 获取I2C互斥锁
         {
             MPU6050_DMP_Get_Data(&Pitch, &Roll, &Yaw);
             xSemaphoreGive(xI2C2Mutex);// 释放锁
@@ -202,18 +255,8 @@ void MPU6050_PoseTask(void *pvParameters)
             pose.Roll = Roll;
             pose.Yaw = Yaw;
             
-            
-            
             xQueueOverwrite(xPoseQueue_mpu6050, &pose);
-             
         }
-         else
-        {
-            // 获取互斥量失败，使用上一次有效数据
-            xQueueOverwrite(xPoseQueue_mpu6050, &last_pose);
-        }
-        
-        
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
@@ -225,70 +268,63 @@ void OLED_DisplayTask(void *pvParameters)
     Pose_t_mpu6050 recv_pose_mpu6050;
 //    uint16_t recv_data_AD[4];
 
-    const TickType_t xFrequency = pdMS_TO_TICKS(50);
+    const TickType_t xFrequency = pdMS_TO_TICKS(20);
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while(1)
     {
         
-        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , pdMS_TO_TICKS(1)) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , pdMS_TO_TICKS(10) ) == pdPASS
+        if( xQueueReceive(xPoseQueue_mpu6050,&recv_pose_mpu6050 , 0) == pdPASS )          //  | xQueueReceive(xPoseQueue_AD     ,&recv_data_AD        , pdMS_TO_TICKS(5) ) == pdPASS
         {
 
-            
 //            Serial_Printf_Async("Pitch=%6.2f  Roll=%6.2f  Yaw=%6.2f\r\n",
-//                    recv_pose_mpu6050.Pitch,
-//                    recv_pose_mpu6050.Roll,
-//                    recv_pose_mpu6050.Yaw);
+//                                recv_pose_mpu6050.Pitch,
+//                                recv_pose_mpu6050.Roll,
+//                                recv_pose_mpu6050.Yaw); 
+            
+            
+            OLED_Clear(); 
+            
+            //OLED显示数字滚动
+            static uint16_t i=0;
+            OLED_ShowNum(i*8,0,i,1,OLED_8X16);    //Serial_Printf("i=%d\r\n",i);
+            i++;
+            i = (i>9?0:i);
+            
+            //OLED显示mpu6050数据
+            int_fast8_t y_p1,y_p2,Yaw_p;
+            y_p1    = 32+32*(recv_pose_mpu6050.Pitch    / 90.0);
+            y_p2    = 63*tan(recv_pose_mpu6050.Roll* PI /180.0);
+            Yaw_p   = 63+63*(recv_pose_mpu6050.Yaw      /180.0); 
+            
+            OLED_ShowString  (6*16              , 8*3      ,"Pitch"                        ,OLED_6X8);
+            OLED_ShowFloatNum(6*15              , 8*4      , recv_pose_mpu6050.Pitch, 2,2  ,OLED_6X8);
+            OLED_ShowString  (6*0               , 8*3      ,"Roll"                         ,OLED_6X8);
+            OLED_ShowFloatNum(6*0               , 8*4      , recv_pose_mpu6050.Roll , 2,2  ,OLED_6X8);
+            OLED_ShowString  (6*7 +(Yaw_p-51)   , 8*6      ,"Yaw"                          ,OLED_6X8);
+            OLED_ShowFloatNum(6*11+(Yaw_p-87)   , 8*7      , recv_pose_mpu6050.Yaw  , 2,2  ,OLED_6X8);
+            
+            OLED_DrawLine(0     ,31         ,127    ,31         );
+            OLED_DrawLine(63    ,0          ,63     ,63         );
+            OLED_DrawLine(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2  );
+            OLED_DrawLine(Yaw_p ,0          ,Yaw_p  ,63         );
+            
+            
+            
+            
+//            //OLED显示AD
+//            
+//            OLED_ShowNum(8*8, 12*0  , recv_data_AD[0]  , 5,OLED_8X16);
+//            OLED_ShowNum(8*8, 12*1  , recv_data_AD[1]  , 5,OLED_8X16);
+//            OLED_ShowNum(8*8, 12*2  , recv_data_AD[2]  , 5,OLED_8X16);
+//            OLED_ShowNum(8*8, 12*3  , recv_data_AD[3]  , 5,OLED_8X16);
 
 
 
             if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)// 获取I2C互斥锁
             {
                 
-                
-                
-                
-                
-                //OLED========================
-                OLED_Clear(); 
-
-                //OLED显示数字滚动
-                static uint16_t i=0;
-                OLED_ShowNum(i*8,0,i,1,OLED_8X16);    //Serial_Printf("i=%d\r\n",i);
-                i++;
-                i = (i>9?0:i);
-                
-
-
-                //OLED显示mpu6050数据
-                int_fast8_t y_p1,y_p2,Yaw_p;
-                y_p1    = 32+32*(recv_pose_mpu6050.Pitch/90);
-                y_p2    = 63*tan(recv_pose_mpu6050.Roll* PI / 180.0);
-                Yaw_p   = 63+63*(recv_pose_mpu6050.Yaw   /180); 
-                
-                OLED_ShowString  (8*12  , 21        ,"Pitch"                        ,OLED_6X8);
-                OLED_ShowFloatNum(8*10  , 14*2      , recv_pose_mpu6050.Pitch, 2,2  ,OLED_8X16);
-                OLED_ShowString  (8*0   , 21        ,"Roll"                         ,OLED_6X8);
-                OLED_ShowFloatNum(8*0   , 14*2      , recv_pose_mpu6050.Roll , 2,2  ,OLED_8X16);
-                OLED_ShowString  (8*5   , 14*4      ,"Yaw"                          ,OLED_6X8);
-                OLED_ShowFloatNum(8*8   , 14*4-6    , recv_pose_mpu6050.Yaw  , 2,2  ,OLED_8X16);
-                
-                OLED_DrawLine(0     ,31         ,127    ,31         );
-                OLED_DrawLine(63    ,0          ,63     ,63         );
-                OLED_DrawLine(0     ,y_p1-y_p2  ,127    ,y_p1+y_p2  );
-                OLED_DrawLine(Yaw_p ,0          ,Yaw_p  ,63         );
-                
-//                //OLED显示AD
-//                
-//                OLED_ShowNum(8*8, 12*0  , recv_data_AD[0]  , 5,OLED_8X16);
-//                OLED_ShowNum(8*8, 12*1  , recv_data_AD[1]  , 5,OLED_8X16);
-//                OLED_ShowNum(8*8, 12*2  , recv_data_AD[2]  , 5,OLED_8X16);
-//                OLED_ShowNum(8*8, 12*3  , recv_data_AD[3]  , 5,OLED_8X16);
-                
-                
                 OLED_Update();
-                //OLED------------------------
-                
                 
                 xSemaphoreGive(xI2C2Mutex);  // 释放锁
             }
@@ -356,9 +392,9 @@ int main(void)
 // 创建队列
 // =====================================================
     
-    xPoseQueue_mpu6050 = xQueueCreate(4, sizeof(Pose_t_mpu6050));
-    xSerialRxQueue = xQueueCreate(256, sizeof(uint8_t));
-    xSerialTxQueue = xQueueCreate(256, sizeof(uint8_t));
+    xPoseQueue_mpu6050  = xQueueCreate(1    , sizeof(Pose_t_mpu6050)    );
+    xSerialRxQueue      = xQueueCreate(256  , sizeof(uint8_t)           );
+    xSerialTxQueue      = xQueueCreate(256  , sizeof(uint8_t)           );
     
 //    xPoseQueue_AD = xQueueCreate(2, sizeof(uint16_t[4]));
     
@@ -375,30 +411,16 @@ int main(void)
 //                NULL);         // 任务句柄
 
 
+    xTaskCreate(OLED_DisplayTask    ,"OLED"    , 1024  ,NULL  ,3  ,&xOLEDTaskHandle       );// OLED 显示任务
+    xTaskCreate(MPU6050_PoseTask    ,"MPU"     , 256   ,NULL  ,4  ,&xMPUTaskHandle        );// MPU6050 任务
+    xTaskCreate(Test_PC13_ledTask   ,"led_PC13", 128   ,NULL  ,1  ,&PC13_led              );// PC13_led 任务
+    xTaskCreate(vSerialRxTask       ,"SerialRx", 256   ,NULL  ,3  ,&vSerialRxTaskHandle   );// SerialRx 任务
+    xTaskCreate(vSerialTxTask       ,"SerialTx", 256   ,NULL  ,2  ,&vSerialTxTaskHandle   );// SerialTx 任务
+    
+//    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);// AD 任务    
+//    xTaskCreate(Encoder2Task, "Encoder2", 256, NULL, 1,&vEncoder2TaskHandle);// Encoder2 任务
 
-    
-    // OLED 显示任务
-    xTaskCreate(OLED_DisplayTask, "OLED", 1024, NULL, 2, &xOLEDTaskHandle);        
-    
-    // MPU6050 任务
-    xTaskCreate(MPU6050_PoseTask, "MPU", 256, NULL, 3, &xMPUTaskHandle);      
-    
-    // PC13_led 任务
-    xTaskCreate(Test_PC13_ledTask, "led_PC13", 128, NULL, 1, &PC13_led );   
-    
-//    // AD 任务
-//    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);
-    
-    // SerialRx 任务
-    xTaskCreate(vSerialRxTask, "SerialRx", 256, NULL, 2,&vSerialRxTaskHandle);      
-    // SerialTx 任务
-    xTaskCreate(vSerialTxTask, "SerialTx", 256, NULL, 2,&vSerialTxTaskHandle);   
-    
-//    // Encoder2 任务
-//    xTaskCreate(Encoder2Task, "Encoder2", 256, NULL, 1,&vEncoder2TaskHandle);
-    
-     //Program Size: Code=39884 RO-data=6892 RW-data=232 ZI-data=13184  
-     //Program Size: Code=39864 RO-data=6888 RW-data=212 ZI-data=13188  
+     
 // =====================================================
     vTaskStartScheduler();  //启动调度
 // =====================================================
