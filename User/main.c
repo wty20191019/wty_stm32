@@ -123,84 +123,28 @@ SemaphoreHandle_t xI2C2Mutex;
 
 
 
+
 // 接收任务：处理串口接收的数据
-void vSerialRxTask(void  *pvParameters )
+void vSerialRxTask(void *pvParameters)
 {
     uint8_t ucRxData;
-    uint8_t rxBuffer[128];
-    uint16_t rxIndex = 0;
-    while (1)
+    
+    while(1)
     {
-        
-        if (xQueueReceive(xSerialRxQueue, &ucRxData, portMAX_DELAY ) == pdPASS)
+        if (xQueueReceive(xSerialRxQueue, &ucRxData, portMAX_DELAY) == pdPASS)
         {
             
-            if (ucRxData == '\r' || ucRxData == '\n'  || ucRxData == ']'  )
-            {
-                if (rxIndex > 0)
-                {
-                    rxBuffer[rxIndex] = '\0';
-                    //============================================================
-                    
-                    
-                    Serial_Printf_Async("%s\r\n", rxBuffer);
-                    
-                    //-----------
-                    
-//                    char *Tag = strtok((char *)rxBuffer, ",");
-//                    if (strcmp(Tag, "key") == 0)
-//                    {
-//                        char *Name = strtok(NULL, ",");
-//                        char *Action = strtok(NULL, ",");
-//                        
-//                        if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
-//                        {
-//                            Serial_Printf_Async("key,1,up\r\n");
-//                        }
-//                        else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
-//                        {
-//                            Serial_Printf_Async("key,2,down\r\n");
-//                        }
-//                    }
-//                    else if (strcmp(Tag, "slider") == 0)
-//                    {
-//                        char *Name = strtok(NULL, ",");
-//                        char *Value = strtok(NULL, ",");
-//                        
-//                        if (strcmp(Name, "1") == 0)
-//                        {
-//                            uint8_t IntValue = atoi(Value);
-//                            
-//                            Serial_Printf_Async("slider,1,%d\r\n", IntValue);
-//                        }
-//                        else if (strcmp(Name, "2") == 0)
-//                        {
-//                            float FloatValue = atof(Value);
-//                            
-//                            Serial_Printf_Async("slider,2,%f\r\n", FloatValue);
-//                        }
-//                    }
-//                    else if (strcmp(Tag, "joystick") == 0)
-//                    {
-//                        int8_t LH = atoi(strtok(NULL, ","));
-//                        int8_t LV = atoi(strtok(NULL, ","));
-//                        int8_t RH = atoi(strtok(NULL, ","));
-//                        int8_t RV = atoi(strtok(NULL, ","));
-//                        
-//                        Serial_Printf_Async("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
-//                    }
             
-                    //============================================================
-                    rxIndex = 0;
-                }
-            }
-            else if (rxIndex < (sizeof(rxBuffer) - 1))
-            {
-                rxBuffer[rxIndex++] = ucRxData;
-            }
+            Serial_Printf_Async("%c\r\n", ucRxData);
         }
+        
     }
 }
+
+
+
+
+
 
 // 发送任务：处理串口发送的数据
 void vSerialTxTask(void *pvParameters)
@@ -411,11 +355,11 @@ int main(void)
 //                NULL);         // 任务句柄
 
 
-    xTaskCreate(OLED_DisplayTask    ,"OLED"    , 1024  ,NULL  ,3  ,&xOLEDTaskHandle       );// OLED 显示任务
-    xTaskCreate(MPU6050_PoseTask    ,"MPU"     , 256   ,NULL  ,4  ,&xMPUTaskHandle        );// MPU6050 任务
+    xTaskCreate(OLED_DisplayTask    ,"OLED"    , 1024  ,NULL  ,2  ,&xOLEDTaskHandle       );// OLED 显示任务
+    xTaskCreate(MPU6050_PoseTask    ,"MPU"     , 256   ,NULL  ,3  ,&xMPUTaskHandle        );// MPU6050 任务
     xTaskCreate(Test_PC13_ledTask   ,"led_PC13", 128   ,NULL  ,1  ,&PC13_led              );// PC13_led 任务
-    xTaskCreate(vSerialRxTask       ,"SerialRx", 256   ,NULL  ,3  ,&vSerialRxTaskHandle   );// SerialRx 任务
-    xTaskCreate(vSerialTxTask       ,"SerialTx", 256   ,NULL  ,2  ,&vSerialTxTaskHandle   );// SerialTx 任务
+    xTaskCreate(vSerialRxTask       ,"SerialRx", 256   ,NULL  ,2  ,&vSerialRxTaskHandle   );// SerialRx 任务
+    xTaskCreate(vSerialTxTask       ,"SerialTx", 256   ,NULL  ,3  ,&vSerialTxTaskHandle   );// SerialTx 任务
     
 //    xTaskCreate(GetAD_Task, "AD_Task", 128, NULL, 1, &xADTaskHandle);// AD 任务    
 //    xTaskCreate(Encoder2Task, "Encoder2", 256, NULL, 1,&vEncoder2TaskHandle);// Encoder2 任务
