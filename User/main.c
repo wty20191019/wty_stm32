@@ -64,7 +64,8 @@ TaskHandle_t xMPUTaskHandle;
 TaskHandle_t xOLEDTaskHandle;
 TaskHandle_t xPC13LedTaskHandle;
 TaskHandle_t vSerialRxTaskHandle;
-TaskHandle_t vSerialTxTaskHandle;
+
+
 
 // 互斥量
 SemaphoreHandle_t xI2C2Mutex;
@@ -167,24 +168,6 @@ void vSerialRxTask(void *pvParameters)
             {
                 rxBuffer[rxIndex++] = ucRxData;
             }
-        }
-    }
-}
-
-//===================================================================================================
-// 串口发送任务
-//===================================================================================================
-void vSerialTxTask(void *pvParameters)
-{
-    uint8_t ucTxData;
-    
-    while(1)
-    {
-        if (xQueueReceive(xSerialTxQueue, &ucTxData, portMAX_DELAY) == pdPASS)         
-        {
-            USART_SendData(USART1, ucTxData);
-            while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-            USART_ClearFlag(USART1, USART_FLAG_TC);
         }
     }
 }
@@ -350,8 +333,8 @@ xI2C2Mutex = xSemaphoreCreateMutex();
 
 // 创建队列======================================
 xPoseQueue_mpu6050 = xQueueCreate(1     , sizeof(Pose_t_mpu6050)    );
-xSerialRxQueue     = xQueueCreate(128   , sizeof(uint8_t)           );
-xSerialTxQueue     = xQueueCreate(128   , sizeof(uint8_t)           );
+xSerialRxQueue     = xQueueCreate(256   , sizeof(uint8_t)           );
+xSerialTxQueue     = xQueueCreate(256   , sizeof(uint8_t)           );
 
 // 创建任务=======================================                                                                           
 //    xTaskCreate(LED_Task, // 任务函数
@@ -366,7 +349,8 @@ xTaskCreate(Test_PC13_ledTask,   "led_PC13",  32    , NULL, 4, &xPC13LedTaskHand
 xTaskCreate(OLED_DisplayTask,    "OLED",      128   , NULL, 3, &xOLEDTaskHandle);
 xTaskCreate(MPU6050_PoseTask,    "MPU",       128   , NULL, 2, &xMPUTaskHandle);
 xTaskCreate(vSerialRxTask,       "SerialRx",  512   , NULL, 3, &vSerialRxTaskHandle);
-xTaskCreate(vSerialTxTask,       "SerialTx",  256   , NULL, 3, &vSerialTxTaskHandle);
+
+
 
 
 // 启动调度器

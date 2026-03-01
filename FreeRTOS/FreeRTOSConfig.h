@@ -58,6 +58,9 @@
 //可管理的中断最高优先级   (重要：不能设置为0！详见http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html)
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY    (8<<4)
 
+
+
+
 /*
 
     如果使用的是带有 STM32 驱动程序库的 STM32

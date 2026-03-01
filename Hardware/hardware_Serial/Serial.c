@@ -1,173 +1,369 @@
-#include "stm32f10x.h"                  // Device header
+#include "stm32f10x.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "task.h"
+#include "semphr.h"
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "FreeRTOS.h"
-#include "queue.h"
-#include "semphr.h"
+#include "serial.h"
 
-#include "Serial.h"
-
+/* 队列句柄定义 */
 QueueHandle_t xSerialRxQueue = NULL;
 QueueHandle_t xSerialTxQueue = NULL;
 
+/* 内部函数声明 */
+static uint32_t Serial_Pow(uint32_t X, uint32_t Y);
+
+/*-----------------------------------------------------------*/
 
 /**
   * 函    数：串口初始化
-  * 参    数：无
-  * 返 回 值：无
   */
 void Serial_Init(void)
 {
-    /*开启时钟*/
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);      //开启USART1的时钟
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);       //开启GPIOA的时钟
+    /* 创建队列 */
+    xSerialRxQueue = xQueueCreate(128, sizeof(uint8_t));
+    xSerialTxQueue = xQueueCreate(128, sizeof(uint8_t));
     
-    /*GPIO初始化*/
+    if(xSerialRxQueue == NULL || xSerialTxQueue == NULL)
+    {
+        return;
+    }
+    
+    /* 开启时钟 */
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    
+    /* GPIO初始化 */
     GPIO_InitTypeDef GPIO_InitStructure;
+    
+    // PA9: TX 复用推挽输出
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);                    //将PA9引脚初始化为复用推挽输出
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    // PA10: RX 浮空输入
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);                    //将PA10引脚初始化为上拉输入
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
     
-    /*USART初始化*/
-    USART_InitTypeDef USART_InitStructure;                                              //定义结构体变量
-    USART_InitStructure.USART_BaudRate = USART1_BaudRate;                               //波特率
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;     //硬件流控制，不需要
-    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;                     //模式，发送模式和接收模式均选择
-    USART_InitStructure.USART_Parity = USART_Parity_No;                                 //奇偶校验，不需要
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;                              //停止位，选择1位
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;                         //字长，选择8位
-    USART_Init(USART1, &USART_InitStructure);                                           //将结构体变量交给USART_Init，配置USART1
+    /* USART初始化 */
+    USART_InitTypeDef USART_InitStructure;
+    USART_InitStructure.USART_BaudRate = USART1_BaudRate;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_Init(USART1, &USART_InitStructure);
     
-    /*中断输出配置*/
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);              //开启串口接收数据的中断
+    /* 中断配置 */
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
     
-    /*NVIC配置*/
-    NVIC_InitTypeDef NVIC_InitStructure;                            //定义结构体变量
-    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;               //选择配置NVIC的USART1线
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                 //指定NVIC线路使能
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 11;      //指定NVIC线路的抢占优先级
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;              //指定NVIC线路的响应优先级
-    NVIC_Init(&NVIC_InitStructure);                                 //将结构体变量交给NVIC_Init，配置NVIC外设
+    /* NVIC配置 */
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_KERNEL_INTERRUPT_PRIORITY;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
     
-    /*USART使能*/
-    USART_Cmd(USART1, ENABLE);                                //使能USART1，串口开始运行
-    
-
+    /* 使能USART */
+    USART_Cmd(USART1, ENABLE);
 }
 
+/*-----------------------------------------------------------*/
 
 /**
-  * 函    数：次方函数（内部使用）
-  * 返 回 值：返回值等于X的Y次方
+  * 函    数：串口完整初始化
   */
-uint32_t Serial_Pow(uint32_t X, uint32_t Y)
+xComPortHandle xSerialPortInitMinimal(unsigned long ulWantedBaud, unsigned portBASE_TYPE uxQueueLength)
 {
-    uint32_t Result = 1;    //设置结果初值为1
-    while (Y --)            //执行Y次
+    xComPortHandle xReturn = (xComPortHandle)1;
+    
+    /* 创建队列 */
+    xSerialRxQueue = xQueueCreate(uxQueueLength, sizeof(uint8_t));
+    xSerialTxQueue = xQueueCreate(uxQueueLength, sizeof(uint8_t));
+    
+    if(xSerialRxQueue != NULL && xSerialTxQueue != NULL)
     {
-        Result *= X;        //将X累乘到结果
+        /* 开启时钟 */
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+        RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+        
+        /* GPIO初始化 */
+        GPIO_InitTypeDef GPIO_InitStructure;
+        
+        // PA9: TX
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+        GPIO_Init(GPIOA, &GPIO_InitStructure);
+        
+        // PA10: RX
+        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+        GPIO_Init(GPIOA, &GPIO_InitStructure);
+        
+        /* USART初始化 */
+        USART_InitTypeDef USART_InitStructure;
+        USART_InitStructure.USART_BaudRate = ulWantedBaud;
+        USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+        USART_InitStructure.USART_StopBits = USART_StopBits_1;
+        USART_InitStructure.USART_Parity = USART_Parity_No;
+        USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+        USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+        USART_Init(USART1, &USART_InitStructure);
+        
+        /* 中断配置 */
+        USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+        
+        /* NVIC配置 */
+        NVIC_InitTypeDef NVIC_InitStructure;
+        NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+        NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = configLIBRARY_KERNEL_INTERRUPT_PRIORITY;
+        NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+        NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+        NVIC_Init(&NVIC_InitStructure);
+        
+        /* 使能USART */
+        USART_Cmd(USART1, ENABLE);
+    }
+    else
+    {
+        xReturn = (xComPortHandle)0;
+    }
+    
+    return xReturn;
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：接收字符
+  */
+BaseType_t xSerialGetChar(xComPortHandle pxPort, signed char *pcRxedChar, TickType_t xBlockTime)
+{
+    (void)pxPort;
+    
+    if(xQueueReceive(xSerialRxQueue, pcRxedChar, xBlockTime) == pdPASS)
+    {
+        return pdTRUE;
+    }
+    else
+    {
+        return pdFALSE;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：发送字符
+  */
+BaseType_t xSerialPutChar(xComPortHandle pxPort, signed char cOutChar, TickType_t xBlockTime)
+{
+    (void)pxPort;
+    
+    if(xQueueSend(xSerialTxQueue, &cOutChar, xBlockTime) == pdPASS)
+    {
+        USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+        return pdPASS;
+    }
+    else
+    {
+        return pdFAIL;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：发送字符串
+  */
+void vSerialPutString(xComPortHandle pxPort, const signed char * const pcString, unsigned short usStringLength)
+{
+    signed char *pxNext = (signed char *)pcString;
+    
+    (void)usStringLength;
+    (void)pxPort;
+    
+    while(*pxNext)
+    {
+        xSerialPutChar(NULL, *pxNext, 0);
+        pxNext++;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：次方计算
+  */
+static uint32_t Serial_Pow(uint32_t X, uint32_t Y)
+{
+    uint32_t Result = 1;
+    while(Y--)
+    {
+        Result *= X;
     }
     return Result;
 }
 
+/*-----------------------------------------------------------*/
 
 /**
-  * 函    数：USART1中断函数
-  * 参    数：无
-  * 返 回 值：无
-  * 注意事项：此函数为中断函数，无需调用，中断触发后自动执行
-  *           函数名为预留的指定名称，可以从启动文件复制
-  *           请确保函数名正确，不能有任何差异，否则中断函数将不能进入
+  * 函    数：异步发送一个字节
   */
-  void USART1_IRQHandler(void)
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;  // 默认为 pdFALSE = ( ( BaseType_t ) 0 )
-    uint8_t ucReceivedData;
-
-    if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
-    {
-        ucReceivedData = USART_ReceiveData(USART1); // 读取数据
-
-        // 增加队列非空检查，避免向NULL队列发送
-        if(xSerialRxQueue != NULL)
-        {
-            xQueueSendToBackFromISR(xSerialRxQueue,
-                                    &ucReceivedData,
-                                    &xHigherPriorityTaskWoken);
-            
-            
-        }
-        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-    }
-
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-
-
-// 供其他任务调用的非阻塞发送 API
 void Serial_SendByte_Async(uint8_t Byte)
 {
-    xQueueSend(xSerialTxQueue, &Byte,portMAX_DELAY);               //portMAX_DELAY
+    if(xQueueSend(xSerialTxQueue, &Byte, portMAX_DELAY) == pdPASS)
+    {
+        USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+    }
 }
 
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：发送数组
+  */
 void Serial_SendArray(uint8_t *Array, uint16_t Length)
 {
     uint16_t i;
-    for (i = 0; i < Length; i ++)               
+    for(i = 0; i < Length; i++)
     {
-        Serial_SendByte_Async(Array[i]);        
+        Serial_SendByte_Async(Array[i]);
     }
 }
 
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：异步发送字符串
+  */
 void Serial_SendString_Async(char *String)
 {
-    while (*String != '\0')
+    while(*String != '\0')
     {
         Serial_SendByte_Async(*String);
         String++;
     }
 }
 
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：异步发送数字
+  */
 void Serial_SendNumber_Async(uint32_t Number, uint8_t Length)
 {
     uint8_t i;
-    for (i = 0; i < Length; i ++)        //根据数字长度遍历数字的每一位
+    for(i = 0; i < Length; i++)
     {
-        Serial_SendByte_Async(Number / Serial_Pow(10, Length - i - 1) % 10 + '0');    //依次调用Serial_SendByte发送每位数字
+        Serial_SendByte_Async(Number / Serial_Pow(10, Length - i - 1) % 10 + '0');
     }
 }
 
+/*-----------------------------------------------------------*/
 
+/**
+  * 函    数：异步发送结构体
+  */
 void Serial_SendStruct_Async(void *pStruct, uint16_t Size)
 {
-    // 将结构体指针转换为字节（uint8_t）指针
     uint8_t *pByte = (uint8_t *)pStruct;
+    uint16_t i;
     
-    // 循环发送每一个字节
-    for(uint16_t i = 0; i < Size; i++)
+    for(i = 0; i < Size; i++)
     {
-        Serial_SendByte_Async(pByte[i]); // 调用您已有的异步字节发送函数
+        Serial_SendByte_Async(pByte[i]);
     }
 }
 
- void Serial_Printf_Async(char *format, ...)
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：异步格式化输出
+  */
+void Serial_Printf_Async(char *format, ...)
 {
-    char String[256];                  
-    va_list arg;                        
-    va_start(arg, format);              
-    // 改用vsnprintf，限制最大长度，避免缓冲区溢出
+    char String[256];
+    va_list arg;
+    va_start(arg, format);
     vsnprintf(String, sizeof(String) - 1, format, arg);
-    String[sizeof(String) - 1] = '\0'; // 强制结尾符，防止溢出
-    va_end(arg);                        
-    Serial_SendString_Async(String);    
+    String[sizeof(String) - 1] = '\0';
+    va_end(arg);
+    Serial_SendString_Async(String);
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：关闭串口
+  */
+void vSerialClose(xComPortHandle xPort)
+{
+    (void)xPort;
+    
+    // 禁用串口
+    USART_Cmd(USART1, DISABLE);
+    
+    // 禁用中断
+    USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+    USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+    
+    // 清空队列
+    if(xSerialRxQueue != NULL)
+    {
+        vQueueDelete(xSerialRxQueue);
+        xSerialRxQueue = NULL;
+    }
+    
+    if(xSerialTxQueue != NULL)
+    {
+        vQueueDelete(xSerialTxQueue);
+        xSerialTxQueue = NULL;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+/**
+  * 函    数：USART1中断服务程序
+  */
+void USART1_IRQHandler(void)
+{
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+    uint8_t ucData;
+    
+    /* 接收中断处理 */
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
+    {
+        ucData = USART_ReceiveData(USART1);
+        if(xSerialRxQueue != NULL)
+        {
+            xQueueSendToBackFromISR(xSerialRxQueue, &ucData, &xHigherPriorityTaskWoken);
+        }
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+    }
+    
+    /* 发送中断处理 */
+    if(USART_GetITStatus(USART1, USART_IT_TXE) == SET)
+    {
+        if(xQueueReceiveFromISR(xSerialTxQueue, &ucData, &xHigherPriorityTaskWoken) == pdTRUE)
+        {
+            USART_SendData(USART1, ucData);
+        }
+        else
+        {
+            USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+        }
+    }
+    
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
 }
 
 
