@@ -45,7 +45,7 @@
 
 #define PI 3.141592653589793
 
-
+uint8_t RE_tast = 0;
 
 
 //=====FreeRTOS=====//
@@ -105,6 +105,7 @@ void vSerialRxTask(void *pvParameters)
                     // 打印接收到的完整帧内容
                     Serial_Printf_Async("[%s]\r\n", rxBuffer);
                     
+                    
                     // 解析帧内容
                     char *Tag = strtok((char *)rxBuffer, ",");
                     
@@ -116,6 +117,8 @@ void vSerialRxTask(void *pvParameters)
                         if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
                         {
                             Serial_Printf_Async("key,1,up\r\n");
+                            RE_tast++;
+                            Serial_Printf_Async("%d\r\n",RE_tast);
                             
                         }
                         else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
@@ -201,11 +204,9 @@ void Test_PC13_ledTask(void *pvParameters)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-
+    
     while(1)
     {
-        // 翻转PC13引脚状态
         if(GPIO_ReadOutputDataBit(GPIOC, GPIO_Pin_13) == Bit_SET)
         {
             GPIO_ResetBits(GPIOC, GPIO_Pin_13);  
@@ -348,22 +349,23 @@ OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
 xI2C2Mutex = xSemaphoreCreateMutex();
 
 // 创建队列======================================
-xPoseQueue_mpu6050 = xQueueCreate(4, sizeof(Pose_t_mpu6050));
-xSerialRxQueue = xQueueCreate(128, sizeof(uint8_t));
-xSerialTxQueue = xQueueCreate(128, sizeof(uint8_t));
+xPoseQueue_mpu6050 = xQueueCreate(1     , sizeof(Pose_t_mpu6050)    );
+xSerialRxQueue     = xQueueCreate(128   , sizeof(uint8_t)           );
+xSerialTxQueue     = xQueueCreate(128   , sizeof(uint8_t)           );
 
-// 创建任务=======================================
-//    xTaskCreate(LED_Task,      // 任务函数
-//                "LED",         // 任务名称
-//                128,           // 堆栈大小（字）
-//                NULL,          // 任务参数
-//                2,             // 优先级（数字越大优先级越高）   (0-7)
-//                NULL);         // 任务句柄
+// 创建任务=======================================                                                                           
+//    xTaskCreate(LED_Task, // 任务函数
+//                "LED",    // 任务名称
+//                128,      // 堆栈大小（字）
+//                NULL,     // 任务参数
+//                2,        // 优先级（数字越大优先级越高）   (0-7)
+//                NULL);    // 任务句柄
+
 
 xTaskCreate(Test_PC13_ledTask,   "led_PC13",  32    , NULL, 4, &xPC13LedTaskHandle);
-xTaskCreate(OLED_DisplayTask,    "OLED",      1024  , NULL, 3, &xOLEDTaskHandle);
-xTaskCreate(MPU6050_PoseTask,    "MPU",       256   , NULL, 2, &xMPUTaskHandle);
-xTaskCreate(vSerialRxTask,       "SerialRx",  256   , NULL, 3, &vSerialRxTaskHandle);
+xTaskCreate(OLED_DisplayTask,    "OLED",      128   , NULL, 3, &xOLEDTaskHandle);
+xTaskCreate(MPU6050_PoseTask,    "MPU",       128   , NULL, 2, &xMPUTaskHandle);
+xTaskCreate(vSerialRxTask,       "SerialRx",  512   , NULL, 3, &vSerialRxTaskHandle);
 xTaskCreate(vSerialTxTask,       "SerialTx",  256   , NULL, 3, &vSerialTxTaskHandle);
 
 

@@ -6,7 +6,7 @@
 #include "queue.h"
                                          
 
-#define USART1_BaudRate      9600          //波特率  //9600  //19200  //38400
+#define USART1_BaudRate      38400          //波特率  //4800 //9600  //38400  //115200
                                            
 // 声明队列句柄
 extern QueueHandle_t xSerialRxQueue;

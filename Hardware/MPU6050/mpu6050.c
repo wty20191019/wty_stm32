@@ -112,7 +112,7 @@ uint8_t MPU_Set_Rate(u16 rate)
      data=1000/rate-1;
      mpu6050_write_reg(MPU_SAMPLE_RATE_REG,data);     //设置数字低通滤波器
 //      return MPU_Set_LPF(rate/2);     //自动设置LPF为采样率的一半
-      return MPU_Set_LPF(200);     //不滤波
+      return MPU_Set_LPF(188);     //1滤波
 }
 
 void MPU6050_Init(void)

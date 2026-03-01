@@ -98,20 +98,15 @@ uint32_t Serial_Pow(uint32_t X, uint32_t Y)
         // 增加队列非空检查，避免向NULL队列发送
         if(xSerialRxQueue != NULL)
         {
-            // 注意：从中断调用，必须使用 xQueueSendToBackFromISR
             xQueueSendToBackFromISR(xSerialRxQueue,
-                                &ucReceivedData,
-                                &xHigherPriorityTaskWoken);
+                                    &ucReceivedData,
+                                    &xHigherPriorityTaskWoken);
             
             
         }
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
     }
 
-    // 如果有任务因为此中断而被解除阻塞，且其优先级高于当前运行的任务，
-    // 则 xHigherPriorityTaskWoken 会被设置为 pdTRUE      //pdTRUE = ( ( BaseType_t ) 1 )
-    // 随后我们必须请求进行一次上下文切换。
-    
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -150,32 +145,6 @@ void Serial_SendNumber_Async(uint32_t Number, uint8_t Length)
     }
 }
 
-//void Serial_Printf_Async(char *format, ...)
-//{
-//    char String[256];                   //定义字符数组
-//    va_list arg;                        //定义可变参数列表数据类型的变量arg
-//    va_start(arg, format);              //从format开始，接收参数列表到arg变量
-//    vsprintf(String, format, arg);      //使用vsprintf打印格式化字符串和参数列表到字符数组中
-//    va_end(arg);                        //结束变量arg
-//    Serial_SendString_Async(String);    //串口发送字符数组（字符串）
-//}
-
-
-void Serial_Printf_Async(char *format, ...)
-{
-    char String[256];                  
-    va_list arg;                        
-    va_start(arg, format);              
-    // 改用vsnprintf，限制最大长度，避免缓冲区溢出
-    vsnprintf(String, sizeof(String) - 1, format, arg);
-    String[sizeof(String) - 1] = '\0'; // 强制结尾符，防止溢出
-    va_end(arg);                        
-    Serial_SendString_Async(String);    
-}
-
-
-
-
 
 void Serial_SendStruct_Async(void *pStruct, uint16_t Size)
 {
@@ -187,6 +156,18 @@ void Serial_SendStruct_Async(void *pStruct, uint16_t Size)
     {
         Serial_SendByte_Async(pByte[i]); // 调用您已有的异步字节发送函数
     }
+}
+
+ void Serial_Printf_Async(char *format, ...)
+{
+    char String[256];                  
+    va_list arg;                        
+    va_start(arg, format);              
+    // 改用vsnprintf，限制最大长度，避免缓冲区溢出
+    vsnprintf(String, sizeof(String) - 1, format, arg);
+    String[sizeof(String) - 1] = '\0'; // 强制结尾符，防止溢出
+    va_end(arg);                        
+    Serial_SendString_Async(String);    
 }
 
 

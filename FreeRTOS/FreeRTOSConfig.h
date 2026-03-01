@@ -20,14 +20,14 @@
  *----------------------------------------------------------*/
 
 /* 内核控制相关配置 */
-#define configUSE_PREEMPTION            1                                   /* 1: 使用抢占式调度器; 0: 使用协作式调度器 */
+#define configUSE_PREEMPTION            0                                   /* 1: 使用抢占式调度器; 0: 使用协作式调度器 */
 #define configUSE_IDLE_HOOK             0                                   /* 1: 启用空闲任务钩子函数; 0: 禁用 */
 #define configUSE_TICK_HOOK             0                                   /* 1: 启用时钟节拍钩子函数; 0: 禁用 */
 #define configCPU_CLOCK_HZ              ( ( unsigned long ) 72000000 )      /* CPU时钟频率: 72MHz (STM32F103) */
 #define configTICK_RATE_HZ              ( ( TickType_t ) 1000 )             /* 系统节拍频率: 1000Hz (1ms) */
 #define configMAX_PRIORITIES            ( 8 )                               /* 最大任务优先级数 (0-7, 0为最低) */
 #define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 256 )          /* 空闲任务堆栈大小 (字) */
-#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 10 * 1024 ) )        /* 堆内存总大小: 10KB (STM32F103C8T6有20KB RAM) */
+#define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 12 * 1024 ) )         /* 堆内存总大小: 12KB (STM32F103C8T6有20KB RAM) */
 #define configMAX_TASK_NAME_LEN         ( 16 )                              /* 任务名称最大长度 */
 #define configUSE_TRACE_FACILITY        0                                   /* 1: 启用可视化跟踪调试; 0: 禁用 (节省资源) */
 #define configUSE_16_BIT_TICKS          0                                   /* 1: 使用16位Tick计数器; 0: 使用32位Tick计数器 */
