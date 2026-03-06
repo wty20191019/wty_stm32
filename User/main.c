@@ -22,15 +22,15 @@
     #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
     
     
-//#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
-//#include "Motor.h"
+#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
+#include "Motor.h"
+#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
+#include "PID_system.h"                 //base     
+
 
 //#include "hardware_AD.h"                //Base    hardware_AD
-//#include "PID_system.h"                 //base     
 //#include "key.h"                        //Base    (PB1 ) (PB11)
-//#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
-//#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "MyDMA.h"                      //Base    hardware_DMA
 //#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
 
@@ -59,7 +59,7 @@ uint16_t recv_Pitch;
 
 // 串口接收帧解析状态变量
 uint8_t     rxBuffer[64];                   // 帧解析缓冲区大小 64
-uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧
+uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧  
 uint16_t    rxIndex;                        // 帧数据索引
 uint8_t     RE_tast;  
 
