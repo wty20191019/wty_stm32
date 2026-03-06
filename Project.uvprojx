@@ -747,14 +747,14 @@
               <FilePath>.\Hardware\PID_system.h</FilePath>
             </File>
             <File>
-              <FileName>PC13_LED.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\PC13_LED.h</FilePath>
-            </File>
-            <File>
               <FileName>PC13_LED.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\PC13_LED.c</FilePath>
+            </File>
+            <File>
+              <FileName>PC13_LED.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\PC13_LED.h</FilePath>
             </File>
           </Files>
         </Group>

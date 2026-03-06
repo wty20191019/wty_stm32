@@ -52,15 +52,14 @@ typedef struct
 
 pose_of_Pitch_Roll_Yaw recv_pose_mpu6050;
 
-int8_t recv_Yaw;
-int8_t recv_Pitch; 
+uint16_t recv_Yaw;
+uint16_t recv_Pitch; 
 
 // 串口接收帧解析状态变量
-#define     RX_BUFFER_SIZE              64  // 帧解析缓冲区大小
-uint8_t     rxBuffer[RX_BUFFER_SIZE];       
+uint8_t     rxBuffer[64];                   // 帧解析缓冲区大小 64
 uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧
 uint16_t    rxIndex;                        // 帧数据索引
-uint8_t RE_tast;  
+uint8_t     RE_tast;  
 
 
 
@@ -142,7 +141,7 @@ void Serial_ProcessRxData(void)
                 }
                 else if (strcmp(Tag, "Pose") == 0)
                 {
-                    recv_Yaw = atoi(strtok(NULL, ","));
+                    recv_Yaw= atoi(strtok(NULL, ","));
                     recv_Pitch = atoi(strtok(NULL, ","));
                 }
                 
@@ -189,7 +188,7 @@ void OLED_DisplayTask(void)
 {
     OLED_Clear(); 
 //------------------------------------
-    // OLED显示数字滚动
+    // OLED显示数字滚动                                                                         
     static uint16_t i = 0;
     OLED_ShowNum(i*8, 0, i, 1, OLED_8X16);
     i++;
@@ -213,6 +212,22 @@ void OLED_DisplayTask(void)
     OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
     OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
     
+
+    
+    
+    OLED_ShowNum(6*0, 8*0   , recv_Yaw  ,3  ,OLED_6X8);
+    OLED_ShowNum(6*0, 8*1   ,recv_Pitch ,3  ,OLED_6X8);
+    
+    
+    Serial_Printf("[plot,%f,%f,%f]",
+                    recv_pose_mpu6050.Pitch,
+                    recv_pose_mpu6050.Roll,
+                    recv_pose_mpu6050.Yaw);
+    
+    
+    
+    
+    
 //------------------------------------
     OLED_Update();
 }
@@ -234,8 +249,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     PC13_LED_Init();                OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
     MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
     MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
-
-//    Serial_Init();          OLED_ShowNum(0, 3, 5, 1, OLED_8X16);OLED_Update();
+    Serial_Init();                  OLED_ShowNum(0, 3, 5, 1, OLED_8X16);OLED_Update();
 
 
 
