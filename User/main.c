@@ -45,7 +45,10 @@
 
 #define PI 3.141592653589793
 
-uint8_t RE_tast = 0;
+uint8_t RE_tast = 0;           // 串口接收任务
+
+int8_t recv_Yaw ;
+int8_t recv_Pitch ;
 
 
 //=====FreeRTOS=====//
@@ -153,6 +156,14 @@ void vSerialRxTask(void *pvParameters)
                         
                         Serial_Printf_Async("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
                     }
+                    else if (strcmp(Tag, "Pose") == 0)
+                    {
+                        recv_Yaw = atoi(strtok(NULL, ","));
+                        recv_Pitch = atoi(strtok(NULL, ","));
+                        
+                        //Serial_Printf_Async("joystick,%d,%d,%d,%d\r\n", recv_Yaw, recv_Pitch);
+                    }
+
                     
                     inFrame = false;
                     rxIndex = 0;
@@ -272,6 +283,9 @@ void OLED_DisplayTask(void *pvParameters)
             OLED_DrawLine(63, 0, 63, 63);
             OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
             OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
+            
+            OLED_ShowNum(6*0, 8*0,recv_Pitch, 3, OLED_6X8);
+            OLED_ShowNum(6*0, 8*1,recv_Yaw, 3, OLED_6X8);
             
             if(xSemaphoreTake(xI2C2Mutex, pdMS_TO_TICKS(1)) == pdTRUE)
             {

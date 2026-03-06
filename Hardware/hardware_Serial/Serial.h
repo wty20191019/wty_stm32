@@ -31,7 +31,7 @@
 #include "queue.h"
 
 
-#define USART1_BaudRate      4800          //波特率  //4800 //9600  //38400  //115200
+#define USART1_BaudRate      9600          //波特率  //4800 //9600  //38400  //115200
 
 
 // 兼容性类型定义
