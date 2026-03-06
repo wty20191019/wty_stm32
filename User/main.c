@@ -20,8 +20,10 @@
     //====mpu6050dmp====//                  
     #include "mpu6050.h"                    //Base    (PB11) (PB10)   I2C2.h    inv_mpu.h
     #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
-
-
+    
+    
+//#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
+//#include "Motor.h"
 
 //#include "hardware_AD.h"                //Base    hardware_AD
 //#include "PID_system.h"                 //base     
