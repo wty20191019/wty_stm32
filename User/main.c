@@ -52,126 +52,99 @@ typedef struct
 
 pose_of_Pitch_Roll_Yaw recv_pose_mpu6050;
 
-
+int8_t recv_Yaw;
+int8_t recv_Pitch; 
 
 // 串口接收帧解析状态变量
 #define     RX_BUFFER_SIZE              64  // 帧解析缓冲区大小
 uint8_t     rxBuffer[RX_BUFFER_SIZE];       
 uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧
 uint16_t    rxIndex;                        // 帧数据索引
+uint8_t RE_tast;  
+
 
 
 //===================================================================================================
 // 串口接收帧解析任务
 //===================================================================================================
+
 void Serial_ParseFrame(void)
 {
-    uint8_t ucRxData[USART1_RX_BUF_SIZE] = {0};  // 临时接收缓冲区
-    uint16_t ucRxLen = 0;
-    
-    // 读取串口接收的数据（无数据则直接返回）
-    if (Serial_GetRxData(ucRxData, &ucRxLen) == 0)
-    {
-        return;
-    }
-    
-    // 遍历接收到的每一个字节，逐字节解析帧
-    for (uint16_t i = 0; i < ucRxLen; i++)
-    {
-        uint8_t byte = ucRxData[i];
-        
-        
-        // 检查是否为帧起始标记 '['
-        if (byte == '[')
+        if (Serial_RxFlag == 1)
         {
-            inFrame = 1;          // 标记进入帧接收状态
-            rxIndex = 0;          // 重置帧数据索引
-            memset(rxBuffer, 0, RX_BUFFER_SIZE);  // 清空帧缓冲区
-            continue;
-        }
-        // 检查是否为帧结束标记 ']'
-        else if (byte == ']')
-        {
-            if (inFrame && rxIndex > 0)  // 有效帧（有数据且在帧内）
+            
+            char *Tag = strtok(Serial_RxPacket, ",");
+            if (strcmp(Tag, "key") == 0)
             {
-                rxBuffer[rxIndex] = '\0';  // 添加字符串结束符
+                char *Name = strtok(NULL, ",");
+                char *Action = strtok(NULL, ",");
                 
-                // 打印接收到的完整帧内容
-                Serial_Printf("[%s]\r\n", rxBuffer);
-                
-                // 解析帧内容
-                char *Tag = strtok((char *)rxBuffer, ",");
-                if (Tag != NULL)  // 防止空数据导致strtok返回NULL
+                if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
                 {
-                    // 解析key指令：[key,1,up] 或 [key,2,down]
-                    if (strcmp(Tag, "key") == 0)
-                    {
-                        char *Name = strtok(NULL, ",");
-                        char *Action = strtok(NULL, ",");
-                        
-                        if (Name != NULL && Action != NULL)
-                        {
-                            if (strcmp(Name, "1") == 0 && strcmp(Action, "up") == 0)
-                            {
-                                Serial_Printf("key,1,up\r\n");
-                            }
-                            else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
-                            {
-                                Serial_Printf("key,2,down\r\n");
-                            }
-                        }
-                    }
-                    // 解析slider指令：[slider,1,100] 或 [slider,2,0.5]
-                    else if (strcmp(Tag, "slider") == 0)
-                    {
-                        char *Name = strtok(NULL, ",");
-                        char *Value = strtok(NULL, ",");
-                        
-                        if (Name != NULL && Value != NULL)
-                        {
-                            if (strcmp(Name, "1") == 0)
-                            {
-                                uint8_t IntValue = atoi(Value);
-                                Serial_Printf("slider,1,%d\r\n", IntValue);
-                            }
-                            else if (strcmp(Name, "2") == 0)
-                            {
-                                float FloatValue = atof(Value);
-                                Serial_Printf("slider,2,%.2f\r\n", FloatValue);  // 保留2位小数
-                            }
-                        }
-                    }
-                    // 解析joystick指令：[joystick,10,-5,8,-3]
-                    else if (strcmp(Tag, "joystick") == 0)
-                    {
-                        char *LH_str = strtok(NULL, ",");
-                        char *LV_str = strtok(NULL, ",");
-                        char *RH_str = strtok(NULL, ",");
-                        char *RV_str = strtok(NULL, ",");
-                        
-                        if (LH_str && LV_str && RH_str && RV_str)
-                        {
-                            int8_t LH = atoi(LH_str);
-                            int8_t LV = atoi(LV_str);
-                            int8_t RH = atoi(RH_str);
-                            int8_t RV = atoi(RV_str);
-                            
-                            Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
-                        }
-                    }
+                    Serial_Printf("key,1,up\r\n");
+                }
+                else if (strcmp(Name, "2") == 0 && strcmp(Action, "down") == 0)
+                {
+                    Serial_Printf("key,2,down\r\n");
                 }
             }
-            // 重置帧状态
-            inFrame = 0;
-            rxIndex = 0;
+            else if (strcmp(Tag, "slider") == 0)
+            {
+                char *Name = strtok(NULL, ",");
+                char *Value = strtok(NULL, ",");
+                
+                if (strcmp(Name, "1") == 0)
+                {
+                    uint8_t IntValue = atoi(Value);
+                    
+                    Serial_Printf("slider,1,%d\r\n", IntValue);
+                }
+                else if (strcmp(Name, "2") == 0)
+                {
+                    float FloatValue = atof(Value);
+                    
+                    Serial_Printf("slider,2,%f\r\n", FloatValue);
+                }
+            }
+            else if (strcmp(Tag, "joystick") == 0)
+            {
+                int8_t LH = atoi(strtok(NULL, ","));
+                int8_t LV = atoi(strtok(NULL, ","));
+                int8_t RH = atoi(strtok(NULL, ","));
+                int8_t RV = atoi(strtok(NULL, ","));
+                
+                Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
+            }
+            
+            Serial_RxFlag = 0;
         }
-        // 正在接收帧内数据，且缓冲区未满
-        else if (inFrame && rxIndex < (RX_BUFFER_SIZE - 1))
-        {
-            rxBuffer[rxIndex++] = byte;  // 存储帧数据
-        }
-    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+//                else if (strcmp(Tag, "Pose") == 0)
+//                {
+//                    char *Yaw_str = strtok(NULL, ",");
+//                    char *Pitch_str = strtok(NULL, ",");
+//                    
+//                    if (Yaw_str != NULL && Pitch_str != NULL)
+//                    {
+//                        recv_Yaw = atoi(Yaw_str);
+//                        recv_Pitch = atoi(Pitch_str);
+//                        
+//                        Serial_Printf("Pose: Yaw=%d, Pitch=%d\r\n", recv_Yaw, recv_Pitch);
+//                    }
+//                }
+
 
 
 //===================================================================================================
@@ -263,7 +236,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //===================================================================================================
 
 
-    SCH_AddTask(Serial_ParseFrame   ,10    ,8      );
+    //SCH_AddTask(Serial_ParseFrame   ,1    ,8      );
     SCH_AddTask(Test_PC13_LED       ,20     ,9      );
     SCH_AddTask(MPU6050_PoseTask    ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask    ,50     ,8      );
@@ -276,6 +249,7 @@ SCH_Start();
     while(1)
     {
         DWT_Delay_us(1);
+        Serial_ParseFrame();
     }
 }
 
