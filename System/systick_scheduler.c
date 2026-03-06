@@ -21,7 +21,7 @@ void SCH_Init(void)
         tasks[i].func = 0;
         tasks[i].period = 0;
         tasks[i].counter = 0;
-        tasks[i].priority = PRIORITY_MAX;  // **修改：默认优先级设为最低（14）**
+        tasks[i].priority = PRIORITY_MAX;
     }
     task_count = 0;
     tick = 0;
@@ -36,11 +36,11 @@ void SCH_Start(void)
     // SysTick已在Init中启用
 }
 
-/* 添加任务（带优先级） */
+
 void SCH_AddTask(TaskFunc func, uint32_t period, uint8_t priority)
 {
     if(task_count < MAX_TASKS && func) {
-        // **修改：限制优先级在有效范围 0-14 内**
+       
         if(priority > PRIORITY_MAX) {
             priority = PRIORITY_MAX;
         }
