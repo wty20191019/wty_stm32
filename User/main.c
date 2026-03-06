@@ -254,7 +254,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 
 
 
-//    Encoder2_TIM4_Init();               OLED_ShowNum(0,3,5,1,OLED_8X16);OLED_Update();
+//    Encoder2_TIM4_Init();                OLED_ShowNum(0,3,5,1,OLED_8X16);OLED_Update();
 //    TIM2_PWM_Init();
 //    TIM34_IC_PWMI_Init();
 //    Encoder1_TIM3_Init();
