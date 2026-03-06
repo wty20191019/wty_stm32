@@ -80,6 +80,7 @@ void Serial_ParseFrame(void)
     {
         uint8_t byte = ucRxData[i];
         
+        
         // 检查是否为帧起始标记 '['
         if (byte == '[')
         {
