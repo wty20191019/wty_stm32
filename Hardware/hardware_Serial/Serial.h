@@ -44,9 +44,7 @@ void Serial_SendNumber(uint32_t Number, uint8_t Length);
 void Serial_SendStruct(void *pStruct, uint16_t Size);
 void Serial_Printf(char *format, ...);
 
-// DMA发送函数（可选）
-void Serial_SendArray_DMA(uint8_t *Array, uint16_t Length);
-void Serial_SendString_DMA(char *String);
+
 
 // 中断回调函数
 void USART1_IRQHandler(void);

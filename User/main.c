@@ -22,17 +22,20 @@
     #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
     
     
-#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
-#include "Motor.h"
+#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)
+#include "Motor.h"                      //Base    PWM.h     PWMA    (PA0)(PB4)(PB5)(PA1)(PA15)(PB3)
 #include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 #include "PID_system.h"                 //base     
+#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
+
+
 
 
 //#include "hardware_AD.h"                //Base    hardware_AD
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "MyDMA.h"                      //Base    hardware_DMA
-//#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
+
 
 
 
@@ -64,10 +67,15 @@ uint16_t    rxIndex;                        // 帧数据索引
 uint8_t     RE_tast;  
 
 
-
-
 //===================================================================================================
-// 串口接收处理函数
+//滤波处理任务
+//===================================================================================================
+void Test_ADC_Filter_Handler(void)
+{
+ADC_Filter_Handler();
+}
+//===================================================================================================
+// 串口接收处理任务
 //===================================================================================================
 void Serial_ProcessRxData(void)
 {
@@ -171,6 +179,25 @@ void Serial_ProcessRxData(void)
 void Test_PC13_LED(void)
 {
 PC13_LED_Turn();
+
+//Serial_Printf("%d\r\n",AD_Filtered_Value[0]);
+//Serial_Printf("%d\r\n",AD_Filtered_Value[1]);
+//Serial_Printf("%d\r\n",AD_Filtered_Value[2]);
+//Serial_Printf("%d\r\n",AD_Filtered_Value[3]);
+//Serial_Printf("%d\r\n",AD_Filtered_Value[4]);
+//Serial_Printf("%d\r\n",AD_Filtered_Value[5]);
+
+    Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
+                ,AD_Filtered_Value[0]
+                ,AD_Filtered_Value[1]
+                ,AD_Filtered_Value[2]
+                ,AD_Filtered_Value[3]
+                ,AD_Filtered_Value[4]
+                ,AD_Filtered_Value[5]);
+
+
+
+
 }
 
 //===================================================================================================
@@ -221,10 +248,10 @@ void OLED_DisplayTask(void)
     OLED_ShowNum(6*0, 8*1   ,recv_Pitch ,3  ,OLED_6X8);
     
     
-    Serial_Printf("[plot,%f,%f,%f]",
-                    recv_pose_mpu6050.Pitch,
-                    recv_pose_mpu6050.Roll,
-                    recv_pose_mpu6050.Yaw);
+//    Serial_Printf("[plot,%f,%f,%f]",
+//                    recv_pose_mpu6050.Pitch,
+//                    recv_pose_mpu6050.Roll,
+//                    recv_pose_mpu6050.Yaw);
     
     
     
@@ -233,6 +260,10 @@ void OLED_DisplayTask(void)
 //------------------------------------
     OLED_Update();
 }
+
+
+
+
 
 
 int main(void)
@@ -247,32 +278,32 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     DWT_Delay_Init();
     SCH_Init();
     I2C_QuickInit(I2C2, 400*1000);
-    OLED_Init();                    OLED_ShowNum(0, 1, 1, 1, OLED_8X16);OLED_Update();
-    PC13_LED_Init();                OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
-    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 1, OLED_8X16);OLED_Update();
-    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 1, OLED_8X16);OLED_Update();
-    Serial_Init();                  OLED_ShowNum(0, 3, 5, 1, OLED_8X16);OLED_Update();
-
-
-
-
-//    Encoder2_TIM4_Init();                OLED_ShowNum(0,3,5,1,OLED_8X16);OLED_Update();
-//    TIM2_PWM_Init();
-//    TIM34_IC_PWMI_Init();
-//    Encoder1_TIM3_Init();
-//    Encoder2_TIM4_Init();
-//    AD_DMA_Init();  
-
-
+    OLED_Init();                    OLED_ShowNum(0, 1, 1, 2, OLED_8X16);OLED_Update();
+    PC13_LED_Init();                OLED_ShowNum(0, 2, 2, 2, OLED_8X16);OLED_Update();
+    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
+    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
+    Serial_Init();                  OLED_ShowNum(0, 3, 5, 2, OLED_8X16);OLED_Update();
+    
+    TIM2_PWM_Init();                OLED_ShowNum(0, 3, 6, 2, OLED_8X16);OLED_Update();
+    Motor_Init();                   OLED_ShowNum(0, 3, 7, 2, OLED_8X16);OLED_Update();
+    Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
+    Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
+    PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
+    AD_DMA_Init( 2 );               OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
+    
+    
+    
+    
 //===================================================================================================
-//systick 调度器
+//systick 调度器       按优先级顺序执行任务 (0->1->2)
 //===================================================================================================
 
 
-    SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
+    SCH_AddTask(Serial_ProcessRxData    ,5      ,8      );
     SCH_AddTask(Test_PC13_LED           ,20     ,9      );
     SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
+    SCH_AddTask(Test_ADC_Filter_Handler ,10     ,8      );
     
 
 // 启动调度器========================================================================================
