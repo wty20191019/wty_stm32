@@ -34,7 +34,7 @@
 //#include "hardware_AD.h"                //Base    hardware_AD
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
-//#include "MyDMA.h"                      //Base    hardware_DMA
+//#include "MyDMA.h"                      //Base    hardware_DMA           
 
 
 
@@ -67,13 +67,6 @@ uint16_t    rxIndex;                        // 帧数据索引
 uint8_t     RE_tast;  
 
 
-//===================================================================================================
-//滤波处理任务
-//===================================================================================================
-void Test_ADC_Filter_Handler(void)
-{
-ADC_Filter_Handler();
-}
 //===================================================================================================
 // 串口接收处理任务
 //===================================================================================================
@@ -180,20 +173,14 @@ void Test_PC13_LED(void)
 {
 PC13_LED_Turn();
 
-//Serial_Printf("%d\r\n",AD_Filtered_Value[0]);
-//Serial_Printf("%d\r\n",AD_Filtered_Value[1]);
-//Serial_Printf("%d\r\n",AD_Filtered_Value[2]);
-//Serial_Printf("%d\r\n",AD_Filtered_Value[3]);
-//Serial_Printf("%d\r\n",AD_Filtered_Value[4]);
-//Serial_Printf("%d\r\n",AD_Filtered_Value[5]);
 
     Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
-                ,AD_Filtered_Value[0]
-                ,AD_Filtered_Value[1]
-                ,AD_Filtered_Value[2]
-                ,AD_Filtered_Value[3]
-                ,AD_Filtered_Value[4]
-                ,AD_Filtered_Value[5]);
+                ,AD_Value[0]
+                ,AD_Value[1]
+                ,AD_Value[2]
+                ,AD_Value[3]
+                ,AD_Value[4]
+                ,AD_Value[5]);
 
 
 
@@ -289,8 +276,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
-    AD_DMA_Init( 2 );               OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
-    
+    AD_DMA_Init();                  OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
     
     
     
@@ -299,11 +285,12 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //===================================================================================================
 
 
-    SCH_AddTask(Serial_ProcessRxData    ,5      ,8      );
+    SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
     SCH_AddTask(Test_PC13_LED           ,20     ,9      );
     SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
-    SCH_AddTask(Test_ADC_Filter_Handler ,10     ,8      );
+    
+    
     
 
 // 启动调度器========================================================================================

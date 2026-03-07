@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* 配置：最多5个任务，1ms滴答 */
-#define MAX_TASKS 5
+#define MAX_TASKS 10
 
 /* 优先级定义：范围 0-14，0为最高，14为最低 */
 #define PRIORITY_HIGH   0    // 最高优先级

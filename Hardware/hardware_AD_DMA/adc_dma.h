@@ -20,15 +20,9 @@ AD_Value[5] → PA2 (ADC1通道2)
 */
 //==============================
 
-
-
-
 extern uint16_t AD_Value[6];
-extern uint16_t AD_Filtered_Value[6];
 
-void AD_DMA_Init(uint8_t filter_mode);
-void ADC_Filter_Handler(void);
-
+void AD_DMA_Init(void);
 
 #endif
 
