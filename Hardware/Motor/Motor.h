@@ -18,7 +18,7 @@ BN2     (PB3 )
 
 
 void Motor_Init(void);
-void Motor_SetSpeed_TIM2_ch1_PWMA(int8_t ch1);
-void Motor_SetSpeed_TIM2_ch2_PWMB(int8_t ch2);
+void Motor_SetSpeed_TIM2_ch1_PWMA(int16_t ch1);
+void Motor_SetSpeed_TIM2_ch2_PWMB(int16_t ch2);
 
 #endif

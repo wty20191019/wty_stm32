@@ -140,6 +140,10 @@ void Serial_ProcessRxData(void)
                     int8_t RH = atoi(strtok(NULL, ","));
                     int8_t RV = atoi(strtok(NULL, ","));
                     
+                    Motor_SetSpeed_TIM2_ch1_PWMA(LV);
+                    Motor_SetSpeed_TIM2_ch2_PWMB(RV);
+                    
+                    
                     Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
                 }
                 else if (strcmp(Tag, "Pose") == 0)
@@ -174,13 +178,13 @@ void Test_PC13_LED(void)
 PC13_LED_Turn();
 
 
-    Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
-                ,AD_Value[0]
-                ,AD_Value[1]
-                ,AD_Value[2]
-                ,AD_Value[3]
-                ,AD_Value[4]
-                ,AD_Value[5]);
+//    Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
+//                ,AD_Value[0]
+//                ,AD_Value[1]
+//                ,AD_Value[2]
+//                ,AD_Value[3]
+//                ,AD_Value[4]
+//                ,AD_Value[5]);
 
 
 
