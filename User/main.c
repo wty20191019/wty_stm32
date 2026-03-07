@@ -135,13 +135,14 @@ void Serial_ProcessRxData(void)
                 }
                 else if (strcmp(Tag, "joystick") == 0)
                 {
-                    int8_t LH = atoi(strtok(NULL, ","));
-                    int8_t LV = atoi(strtok(NULL, ","));
-                    int8_t RH = atoi(strtok(NULL, ","));
-                    int8_t RV = atoi(strtok(NULL, ","));
+                    int16_t LH = atoi(strtok(NULL, ","));
+                    int16_t LV = atoi(strtok(NULL, ","));
+                    int16_t RH = atoi(strtok(NULL, ","));
+                    int16_t RV = atoi(strtok(NULL, ","));
                     
-                    Motor_SetSpeed_TIM2_ch1_PWMA(LV);
-                    Motor_SetSpeed_TIM2_ch2_PWMB(RV);
+                    
+                    Motor_Set_TIM2_ch1_PWMA( LV);
+                    Motor_Set_TIM2_ch2_PWMB( RV);
                     
                     
                     Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
@@ -185,6 +186,7 @@ PC13_LED_Turn();
 //                ,AD_Value[3]
 //                ,AD_Value[4]
 //                ,AD_Value[5]);
+    Serial_Printf("[plot,%d]",AD_Value[0]);
 
 
 
@@ -271,8 +273,8 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     I2C_QuickInit(I2C2, 400*1000);
     OLED_Init();                    OLED_ShowNum(0, 1, 1, 2, OLED_8X16);OLED_Update();
     PC13_LED_Init();                OLED_ShowNum(0, 2, 2, 2, OLED_8X16);OLED_Update();
-    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
-    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
+//    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
+//    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
     Serial_Init();                  OLED_ShowNum(0, 3, 5, 2, OLED_8X16);OLED_Update();
     
     TIM2_PWM_Init();                OLED_ShowNum(0, 3, 6, 2, OLED_8X16);OLED_Update();
@@ -281,6 +283,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
     AD_DMA_Init();                  OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
+    
     
     
     
@@ -294,9 +297,8 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     
-    
-    
 
+    
 // 启动调度器========================================================================================
 SCH_Start();
 //===================================================================================================
@@ -304,6 +306,10 @@ SCH_Start();
     while(1)
     {
         //DWT_Delay_us(1);
+        //Motor_Set_TIM2_ch1_PWMA(-999);
+        //Motor_Set_TIM2_ch2_PWMB(-999);
+        GPIO_SetBits(GPIOA, GPIO_Pin_15);
+        GPIO_ResetBits(GPIOA, GPIO_Pin_15);
     }
 }
 
