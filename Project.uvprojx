@@ -337,7 +337,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\Hardware\hardware_AD;.\Hardware\hardware_AD_DMA;.\Hardware\hardware_Serial;.\Hardware\Motor</IncludePath>
+              <IncludePath>.\Start;.\Library;.\User;.\System;.\Hardware;.\Hardware\MPU6050;.\Hardware\OLED_2;.\Hardware\hardware_I2C;.\Hardware\hardware_AD;.\Hardware\hardware_AD_DMA;.\Hardware\hardware_Serial;.\Hardware\Motor;.\Hardware\LightSensor</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>

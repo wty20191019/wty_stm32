@@ -27,7 +27,7 @@
 #include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 #include "PID_system.h"                 //base     
 
-
+#include "LightSensor.h"
 
 
 
@@ -74,9 +74,6 @@ int16_t differential_speed;
 
 PID_t PID_average_speed;
 PID_t PID_differential_speed;
-
-
-
 
 
 
@@ -251,17 +248,7 @@ void Test_PC13_LED(void)
 {
     
     PC13_LED_Turn();
-
-
-//    Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
-//                ,AD_Value[0]
-//                ,AD_Value[1]
-//                ,AD_Value[2]
-//                ,AD_Value[3]
-//                ,AD_Value[4]
-//                ,AD_Value[5]);
-
-
+    
 }
 
 //===================================================================================================
@@ -328,7 +315,7 @@ void OLED_DisplayTask(void)
 
 
 //===================================================================================================
-// APP 任务                     (100ms)
+// APP 任务                     (50ms)
 //===================================================================================================
 void APP (void)
 {
@@ -342,6 +329,10 @@ void APP (void)
     
     Motor_Set_TIM2_ch1_PWMA(0);
     Motor_Set_TIM2_ch2_PWMB(0);
+    
+//    Serial_Printf(  "[plot,%f]", LightSensor_GetPositionCentered()  );
+    
+    
 
 }
 
@@ -361,9 +352,9 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     DWT_Delay_Init();
     SCH_Init();
     I2C_QuickInit(I2C2, 400*1000);
-    OLED_Init();                    OLED_ShowNum(0, 1, 1, 2, OLED_8X16);OLED_Update();
-    PC13_LED_Init();                OLED_ShowNum(0, 2, 2, 2, OLED_8X16);OLED_Update();
-    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
+    OLED_Init();                    OLED_ShowNum(0, 3, 1, 2, OLED_8X16);OLED_Update();
+    PC13_LED_Init();                OLED_ShowNum(0, 3, 2, 2, OLED_8X16);OLED_Update();
+    MPU6050_Init();                 OLED_ShowNum(0, 3, 3, 2, OLED_8X16);OLED_Update();
     MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
     Serial_Init();                  OLED_ShowNum(0, 3, 5, 2, OLED_8X16);OLED_Update();
     
@@ -384,7 +375,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,50     ,8      );
-    SCH_AddTask(APP                     ,100    ,9      );
+    SCH_AddTask(APP                     ,50     ,9      );
     
 
 // 启动调度器========================================================================================
