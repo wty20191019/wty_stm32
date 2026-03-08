@@ -66,6 +66,19 @@ uint8_t     inFrame;                        // 帧接收状态：0-未在帧内�
 uint16_t    rxIndex;                        // 帧数据索引
 uint8_t     RE_tast;  
 
+//===================================================================================================
+// Encoder测速任务               (50ms)
+//===================================================================================================
+void Encoder_get_speed(void)
+{
+    
+    Serial_Printf("[plot,%d,%d]"
+                ,Encoder1_TIM3_Encoder_Get()
+                ,Encoder2_TIM4_Encoder_Get());
+
+}
+
+
 
 //===================================================================================================
 // 串口接收处理任务
@@ -186,9 +199,6 @@ PC13_LED_Turn();
 //                ,AD_Value[3]
 //                ,AD_Value[4]
 //                ,AD_Value[5]);
-    Serial_Printf("[plot,%d]",AD_Value[0]);
-
-
 
 
 }
@@ -273,8 +283,8 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     I2C_QuickInit(I2C2, 400*1000);
     OLED_Init();                    OLED_ShowNum(0, 1, 1, 2, OLED_8X16);OLED_Update();
     PC13_LED_Init();                OLED_ShowNum(0, 2, 2, 2, OLED_8X16);OLED_Update();
-//    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
-//    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
+    MPU6050_Init();                 OLED_ShowNum(0, 2, 3, 2, OLED_8X16);OLED_Update();
+    MPU6050_DMP_Init();             OLED_ShowNum(0, 3, 4, 2, OLED_8X16);OLED_Update();
     Serial_Init();                  OLED_ShowNum(0, 3, 5, 2, OLED_8X16);OLED_Update();
     
     TIM2_PWM_Init();                OLED_ShowNum(0, 3, 6, 2, OLED_8X16);OLED_Update();
@@ -296,7 +306,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(Test_PC13_LED           ,20     ,9      );
     SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
-    
+    SCH_AddTask(Encoder_get_speed       ,50     ,8      );
 
     
 // 启动调度器========================================================================================
