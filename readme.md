@@ -5,8 +5,8 @@
 
 | 存储类型 | 计算方式 | 占用大小 | 总容量 | 使用率 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Flash (ROM)** | Code + RO-data | 44.30 KB | 64 KB | **69.22%** |
-| **RAM** | RW-data + ZI-data | 3.27 KB | 20 KB | **16.35%** |
+| **Flash (ROM)** | Code + RO-data | 46.93 KB | 64 KB | **73.33%** |
+| **RAM** | RW-data + ZI-data | 3.45 KB | 20 KB | **17.24%** |
 
 
 ```c
@@ -32,18 +32,20 @@
     //====mpu6050dmp====//                  
     #include "mpu6050.h"                    //Base    (PB11) (PB10)   I2C2.h    inv_mpu.h
     #include "inv_mpu.h"                    //Base                    I2C2.h    inv_mpu.h    mpu6050.h
+    
+    
+#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)
+#include "Motor.h"                      //Base    PWM.h     PWMA    (PA0)(PB4)(PB5)(PA1)(PA15)(PB3)
+#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
+#include "PID_system.h"                 //base     
 
 
 
-//#include "hardware_AD.h"                //Base    hardware_AD
-//#include "PID_system.h"                 //base     
+
+
+
 //#include "key.h"                        //Base    (PB1 ) (PB11)
-//#include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)_CH3(PA2)_CH4(PA3)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
-//#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
-//#include "MyDMA.h"                      //Base    hardware_DMA
-//#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
-
 
 
 

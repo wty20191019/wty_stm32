@@ -31,11 +31,9 @@
 
 
 
-//#include "hardware_AD.h"                //Base    hardware_AD
+
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
-//#include "MyDMA.h"                      //Base    hardware_DMA           
-
 
 
 
@@ -57,11 +55,8 @@ typedef struct
 
 pose_of_Pitch_Roll_Yaw recv_pose_mpu6050;
 
-uint16_t recv_Yaw;
-uint16_t recv_Pitch; 
-
-uint16_t Speed_A;
-uint16_t Speed_B;
+int16_t recv_Yaw;
+int16_t recv_Pitch; 
 
 
 // 串口接收帧解析状态变量
@@ -71,8 +66,19 @@ uint16_t    rxIndex;                        // 帧数据索引
 uint8_t     RE_tast;
 
 
-PID_t PID_Speed_A;
-PID_t PID_Speed_B;
+int16_t Speed_A;
+int16_t Speed_B;
+int16_t average_speed;
+int16_t differential_speed;
+
+
+PID_t PID_average_speed;
+PID_t PID_differential_speed;
+
+
+
+
+
 
 //===================================================================================================
 // PID参数初始化
@@ -80,31 +86,31 @@ PID_t PID_Speed_B;
 void PID_System_Init(void)
 {
 
-    // PID_Speed_A
-    PID_Speed_A.Target = 0.0f;      // 目标值
-    PID_Speed_A.Actual = 0.0f;      // 实际值
-    PID_Speed_A.Out = 0.0f;         // 输出值
-    PID_Speed_A.Kp = 1.0f;          // 比例系数
-    PID_Speed_A.Ki = 0.0f;          // 积分系数
-    PID_Speed_A.Kd = 0.0f;          // 微分系数
-    PID_Speed_A.Error0 = 0.0f;      // 本次误差
-    PID_Speed_A.Error1 = 0.0f;      // 上次误差
-    PID_Speed_A.ErrorInt = 0.0f;    // 误差积分
-    PID_Speed_A.OutMax = 1000.0f;   // 输出最大值
-    PID_Speed_A.OutMin = -1000.0f;  // 输出最小值
+    // PID_average_speed
+    PID_average_speed.Target = 0.0f;        // 目标值
+    PID_average_speed.Actual = 0.0f;        // 实际值
+    PID_average_speed.Out = 0.0f;           // 输出值
+    PID_average_speed.Kp = 1.0f;            // 比例系数
+    PID_average_speed.Ki = 0.0f;            // 积分系数
+    PID_average_speed.Kd = 0.0f;            // 微分系数
+    PID_average_speed.Error0 = 0.0f;        // 本次误差
+    PID_average_speed.Error1 = 0.0f;        // 上次误差
+    PID_average_speed.ErrorInt = 0.0f;      // 误差积分
+    PID_average_speed.OutMax = 1000.0f;     // 输出最大值
+    PID_average_speed.OutMin = -1000.0f;    // 输出最小值
     
-    // PID实例B
-    PID_Speed_B.Target = 0.0f;      // 目标值
-    PID_Speed_B.Actual = 0.0f;      // 实际值
-    PID_Speed_B.Out = 0.0f;         // 输出值
-    PID_Speed_B.Kp = 1.0f;          // 比例系数
-    PID_Speed_B.Ki = 0.0f;          // 积分系数
-    PID_Speed_B.Kd = 0.0f;          // 微分系数
-    PID_Speed_B.Error0 = 0.0f;      // 本次误差
-    PID_Speed_B.Error1 = 0.0f;      // 上次误差
-    PID_Speed_B.ErrorInt = 0.0f;    // 误差积分
-    PID_Speed_B.OutMax = 1000.0f;   // 输出最大值
-    PID_Speed_B.OutMin = -1000.0f;  // 输出最小值
+    // PID_differential_speed
+    PID_differential_speed.Target = 0.0f;       // 目标值
+    PID_differential_speed.Actual = 0.0f;       // 实际值
+    PID_differential_speed.Out = 0.0f;          // 输出值
+    PID_differential_speed.Kp = 1.0f;           // 比例系数
+    PID_differential_speed.Ki = 0.0f;           // 积分系数
+    PID_differential_speed.Kd = 0.0f;           // 微分系数
+    PID_differential_speed.Error0 = 0.0f;       // 本次误差
+    PID_differential_speed.Error1 = 0.0f;       // 上次误差
+    PID_differential_speed.ErrorInt = 0.0f;     // 误差积分
+    PID_differential_speed.OutMax = 500.0f;     // 输出最大值
+    PID_differential_speed.OutMin = -500.0f;    // 输出最小值
     
     
 }
@@ -120,6 +126,11 @@ void Encoder_get_speed(void)
 {
     Speed_A = Encoder1_TIM3_Encoder_Get();
     Speed_B = Encoder2_TIM4_Encoder_Get();
+    
+    average_speed = Speed_A + Speed_B;
+    differential_speed = Speed_A - Speed_B;
+    
+
 
 //    Serial_Printf("[plot,%d,%d]"
 //                ,Speed_A
@@ -322,15 +333,15 @@ void OLED_DisplayTask(void)
 void APP (void)
 {
 
-    PID_Speed_A.Actual = (float)Speed_A;  // 添加类型转换
-    PID_Speed_B.Actual = (float)Speed_B;  // 添加类型转换
+    PID_average_speed.Actual = (float)average_speed;
+    PID_differential_speed.Actual = (float)differential_speed;
 
-    // 调用PID更新函数
-    PID_Update(&PID_Speed_A);
-    PID_Update(&PID_Speed_B);
-
-
-
+    
+    PID_Update(&PID_average_speed);
+    PID_Update(&PID_differential_speed);
+    
+    Motor_Set_TIM2_ch1_PWMA(0);
+    Motor_Set_TIM2_ch2_PWMB(0);
 
 }
 
@@ -369,8 +380,8 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //=============|函数====================|周期===|优先级=|============================================
     
     SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
-    SCH_AddTask(Test_PC13_LED           ,20     ,9      );
-    SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
+    SCH_AddTask(Test_PC13_LED           ,20     ,10     );
+    SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,50     ,8      );
     SCH_AddTask(APP                     ,100    ,9      );
