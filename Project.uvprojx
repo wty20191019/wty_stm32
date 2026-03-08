@@ -844,47 +844,17 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>hardware_AD</GroupName>
-          <Files>
-            <File>
-              <FileName>hardware_AD.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\hardware_AD\hardware_AD.c</FilePath>
-            </File>
-            <File>
-              <FileName>hardware_AD.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\hardware_AD\hardware_AD.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>hardware_AD_DMA</GroupName>
-          <Files>
-            <File>
-              <FileName>adc_dma.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\hardware_AD_DMA\adc_dma.c</FilePath>
-            </File>
-            <File>
-              <FileName>adc_dma.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\hardware_AD_DMA\adc_dma.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>hardware_Serial</GroupName>
           <Files>
-            <File>
-              <FileName>Serial.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\hardware_Serial\Serial.c</FilePath>
-            </File>
             <File>
               <FileName>Serial.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\hardware_Serial\Serial.h</FilePath>
+            </File>
+            <File>
+              <FileName>Serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\hardware_Serial\Serial.c</FilePath>
             </File>
           </Files>
         </Group>

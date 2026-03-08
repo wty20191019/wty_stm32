@@ -26,7 +26,7 @@
 #include "Motor.h"                      //Base    PWM.h     PWMA    (PA0)(PB4)(PB5)(PA1)(PA15)(PB3)
 #include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 #include "PID_system.h"                 //base     
-#include "adc_dma.h"                    //Base    hardware_AD    hardware_DMA
+
 
 
 
@@ -292,7 +292,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
-    AD_DMA_Init();                  OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
+
     
     
     
