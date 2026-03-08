@@ -363,7 +363,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     
-    PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
+    PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();  
     
 
 //===================================================================================================
