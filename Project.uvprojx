@@ -672,16 +672,6 @@
               <FilePath>.\System\sys.h</FilePath>
             </File>
             <File>
-              <FileName>MyDMA.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\System\MyDMA.c</FilePath>
-            </File>
-            <File>
-              <FileName>MyDMA.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\System\MyDMA.h</FilePath>
-            </File>
-            <File>
               <FileName>systick_scheduler.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\System\systick_scheduler.c</FilePath>
