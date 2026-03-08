@@ -202,6 +202,16 @@ void Serial_ProcessRxData(void)
                         float FloatValue = atof(Value);
                         Serial_Printf("slider,2,%f\r\n", FloatValue);
                     }
+                    else if (strcmp(Name, "3") == 0)
+                    {
+                        float FloatValue = atof(Value);
+                        Serial_Printf("slider,3,%f\r\n", FloatValue);
+                    }
+                    else if (strcmp(Name, "4") == 0)
+                    {
+                        float FloatValue = atof(Value);
+                        Serial_Printf("slider,4,%f\r\n", FloatValue);
+                    }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
                 {
@@ -259,6 +269,9 @@ void MPU6050_PoseTask(void)
     MPU6050_DMP_Get_Data(   &recv_pose_mpu6050.Pitch,
                             &recv_pose_mpu6050.Roll,
                             &recv_pose_mpu6050.Yaw);
+                            
+
+
 }
 
 //===================================================================================================
@@ -292,20 +305,10 @@ void OLED_DisplayTask(void)
     OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
     OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
     
-
     
     
     OLED_ShowNum(6*0, 8*0   , recv_Yaw  ,3  ,OLED_6X8);
     OLED_ShowNum(6*0, 8*1   ,recv_Pitch ,3  ,OLED_6X8);
-    
-    
-//    Serial_Printf("[plot,%f,%f,%f]",
-//                    recv_pose_mpu6050.Pitch,
-//                    recv_pose_mpu6050.Roll,
-//                    recv_pose_mpu6050.Yaw);
-    
-    
-    
     
     
 //------------------------------------
@@ -327,12 +330,17 @@ void APP (void)
     PID_Update(&PID_average_speed);
     PID_Update(&PID_differential_speed);
     
-    Motor_Set_TIM2_ch1_PWMA(0);
-    Motor_Set_TIM2_ch2_PWMB(0);
+    Motor_Set_TIM2_ch1_PWMA(0);  //PID_average_speed.Out + PID_differential_speed.Out
+    Motor_Set_TIM2_ch2_PWMB(0);  //PID_average_speed.Out - PID_differential_speed.Out
+    
     
 //    Serial_Printf(  "[plot,%f]", LightSensor_GetPositionCentered()  );
-    
-    
+
+//    Serial_Printf("[plot,%f,%f,%f]",
+//                    recv_pose_mpu6050.Pitch,
+//                    recv_pose_mpu6050.Roll,
+//                    recv_pose_mpu6050.Yaw);
+
 
 }
 
