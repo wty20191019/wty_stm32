@@ -56,6 +56,7 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* Go to infinite loop when Hard Fault exception occurs */
+  /* 当发生硬件故障异常时，进入无限循环 */
   while (1)
   {
   }

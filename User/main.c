@@ -60,21 +60,70 @@ pose_of_Pitch_Roll_Yaw recv_pose_mpu6050;
 uint16_t recv_Yaw;
 uint16_t recv_Pitch; 
 
+uint16_t Speed_A;
+uint16_t Speed_B;
+
+
 // 串口接收帧解析状态变量
 uint8_t     rxBuffer[64];                   // 帧解析缓冲区大小 64
 uint8_t     inFrame;                        // 帧接收状态：0-未在帧内，1-正在接收帧  
 uint16_t    rxIndex;                        // 帧数据索引
-uint8_t     RE_tast;  
+uint8_t     RE_tast;
+
+
+PID_t PID_Speed_A;
+PID_t PID_Speed_B;
+
+//===================================================================================================
+// PID参数初始化
+//===================================================================================================
+void PID_System_Init(void)
+{
+
+    // PID_Speed_A
+    PID_Speed_A.Target = 0.0f;      // 目标值
+    PID_Speed_A.Actual = 0.0f;      // 实际值
+    PID_Speed_A.Out = 0.0f;         // 输出值
+    PID_Speed_A.Kp = 1.0f;          // 比例系数
+    PID_Speed_A.Ki = 0.0f;          // 积分系数
+    PID_Speed_A.Kd = 0.0f;          // 微分系数
+    PID_Speed_A.Error0 = 0.0f;      // 本次误差
+    PID_Speed_A.Error1 = 0.0f;      // 上次误差
+    PID_Speed_A.ErrorInt = 0.0f;    // 误差积分
+    PID_Speed_A.OutMax = 1000.0f;   // 输出最大值
+    PID_Speed_A.OutMin = -1000.0f;  // 输出最小值
+    
+    // PID实例B
+    PID_Speed_B.Target = 0.0f;      // 目标值
+    PID_Speed_B.Actual = 0.0f;      // 实际值
+    PID_Speed_B.Out = 0.0f;         // 输出值
+    PID_Speed_B.Kp = 1.0f;          // 比例系数
+    PID_Speed_B.Ki = 0.0f;          // 积分系数
+    PID_Speed_B.Kd = 0.0f;          // 微分系数
+    PID_Speed_B.Error0 = 0.0f;      // 本次误差
+    PID_Speed_B.Error1 = 0.0f;      // 上次误差
+    PID_Speed_B.ErrorInt = 0.0f;    // 误差积分
+    PID_Speed_B.OutMax = 1000.0f;   // 输出最大值
+    PID_Speed_B.OutMin = -1000.0f;  // 输出最小值
+    
+    
+}
+
+
+
+
 
 //===================================================================================================
 // Encoder测速任务               (50ms)
 //===================================================================================================
 void Encoder_get_speed(void)
 {
-    
-    Serial_Printf("[plot,%d,%d]"
-                ,Encoder1_TIM3_Encoder_Get()
-                ,Encoder2_TIM4_Encoder_Get());
+    Speed_A = Encoder1_TIM3_Encoder_Get();
+    Speed_B = Encoder2_TIM4_Encoder_Get();
+
+//    Serial_Printf("[plot,%d,%d]"
+//                ,Speed_A
+//                ,Speed_B);
 
 }
 
@@ -189,7 +238,8 @@ void Serial_ProcessRxData(void)
 //===================================================================================================
 void Test_PC13_LED(void)
 {
-PC13_LED_Turn();
+    
+    PC13_LED_Turn();
 
 
 //    Serial_Printf("[plot,%d,%d,%d,%d,%d,%d]"
@@ -266,12 +316,31 @@ void OLED_DisplayTask(void)
 
 
 
+//===================================================================================================
+// APP 任务                     (100ms)
+//===================================================================================================
+void APP (void)
+{
+
+    PID_Speed_A.Actual = (float)Speed_A;  // 添加类型转换
+    PID_Speed_B.Actual = (float)Speed_B;  // 添加类型转换
+
+    // 调用PID更新函数
+    PID_Update(&PID_Speed_A);
+    PID_Update(&PID_Speed_B);
+
+
+
+
+}
+
+
 
 
 
 int main(void)
 {
-// 设置NVIC优先级分组
+// 设置NVIC优先级分组================================================================================
 NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 
 //===================================================================================================
@@ -291,35 +360,29 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Motor_Init();                   OLED_ShowNum(0, 3, 7, 2, OLED_8X16);OLED_Update();
     Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
+    
     PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
+    
 
-    
-    
-    
-    
 //===================================================================================================
-//systick 调度器       按优先级顺序执行任务 (0->1->2)
-//===================================================================================================
-
-
+//systick 调度器                                (0->1->2)
+//=============|函数====================|周期===|优先级=|============================================
+    
     SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
     SCH_AddTask(Test_PC13_LED           ,20     ,9      );
     SCH_AddTask(MPU6050_PoseTask        ,10     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,50     ,8      );
-
+    SCH_AddTask(APP                     ,100    ,9      );
     
+
 // 启动调度器========================================================================================
 SCH_Start();
 //===================================================================================================
 
     while(1)
     {
-        //DWT_Delay_us(1);
-        //Motor_Set_TIM2_ch1_PWMA(-999);
-        //Motor_Set_TIM2_ch2_PWMB(-999);
-        GPIO_SetBits(GPIOA, GPIO_Pin_15);
-        GPIO_ResetBits(GPIOA, GPIO_Pin_15);
+        DWT_Delay_us(1);
     }
 }
 

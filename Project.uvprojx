@@ -874,6 +874,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Hardware\LightSensor</GroupName>
+          <Files>
+            <File>
+              <FileName>LightSensor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\LightSensor\LightSensor.c</FilePath>
+            </File>
+            <File>
+              <FileName>LightSensor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\LightSensor\LightSensor.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>User</GroupName>
           <Files>
             <File>
