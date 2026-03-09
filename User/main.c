@@ -270,7 +270,7 @@ void MPU6050_PoseTask(void)
                             &recv_pose_mpu6050.Roll,
                             &recv_pose_mpu6050.Yaw);
                             
-Serial_Printf("[plot,%d,%d,%d]",recv_pose_mpu6050.Pitch,recv_pose_mpu6050.Roll,recv_pose_mpu6050.Yaw ); 
+Serial_Printf("[plot,%f,%f,%f]",recv_pose_mpu6050.Pitch,recv_pose_mpu6050.Roll,recv_pose_mpu6050.Yaw ); 
 
     
 
@@ -372,7 +372,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //=============|函数====================|周期===|优先级=|============================================
     
     SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
-    SCH_AddTask(Test_PC13_LED           ,12     ,10     );
+    SCH_AddTask(Test_PC13_LED           ,20     ,10     );
     SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,50     ,8      );
@@ -384,7 +384,10 @@ SCH_Start();
 
     while(1)
     {
-        DWT_Delay_us(1);
+        
+        SCH_Dispatch();
+        __WFI();
+        
     }
 }
 
