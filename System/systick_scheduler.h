@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 
-/* 配置：最多5个任务，1ms滴答 */
+// 任务在中断中运行-对时序无要求的应用周期设为最小
+
+/* 配置：最多任务数，1ms滴答 */
 #define MAX_TASKS 10
 
 /* 优先级定义：范围 0-14，0为最高，14为最低 */
@@ -20,6 +22,8 @@ void SCH_Start(void);                                         // 启动
 void SCH_Tick(void);                                          // 滴答（放SysTick中断）
 
 #endif
+
+
 
 
 

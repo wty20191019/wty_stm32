@@ -270,6 +270,9 @@ void MPU6050_PoseTask(void)
                             &recv_pose_mpu6050.Roll,
                             &recv_pose_mpu6050.Yaw);
                             
+Serial_Printf("[plot,%d,%d,%d]",recv_pose_mpu6050.Pitch,recv_pose_mpu6050.Roll,recv_pose_mpu6050.Yaw ); 
+
+    
 
 
 }
@@ -288,22 +291,12 @@ void OLED_DisplayTask(void)
     i = (i > 9 ? 0 : i);
 
     // OLED显示mpu6050数据
-    int_fast8_t y_p1, y_p2, Yaw_p;
-    y_p1 = 32 + 32 * (recv_pose_mpu6050.Pitch / 90.0);
-    y_p2 = 63 * tan(recv_pose_mpu6050.Roll * PI / 180.0);
-    Yaw_p = 63 + 63 * (recv_pose_mpu6050.Yaw / 180.0); 
-
     OLED_ShowString(6*16, 8*3, "Pitch", OLED_6X8);
     OLED_ShowFloatNum(6*15, 8*4, recv_pose_mpu6050.Pitch, 2, 2, OLED_6X8);
     OLED_ShowString(6*0, 8*3, "Roll", OLED_6X8);
     OLED_ShowFloatNum(6*0, 8*4, recv_pose_mpu6050.Roll, 2, 2, OLED_6X8);
-    OLED_ShowString(6*7 + (Yaw_p-51), 8*6, "Yaw", OLED_6X8);
-    OLED_ShowFloatNum(6*11 + (Yaw_p-87), 8*7, recv_pose_mpu6050.Yaw, 2, 2, OLED_6X8);
-
-    OLED_DrawLine(0, 31, 127, 31);
-    OLED_DrawLine(63, 0, 63, 63);
-    OLED_DrawLine(0, y_p1-y_p2, 127, y_p1+y_p2);
-    OLED_DrawLine(Yaw_p, 0, Yaw_p, 63);
+    OLED_ShowString(6*7 , 8*7, "Yaw", OLED_6X8);
+    OLED_ShowFloatNum(6*11, 8*7, recv_pose_mpu6050.Yaw, 2, 2, OLED_6X8);
     
     
     
@@ -379,12 +372,11 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 //=============|函数====================|周期===|优先级=|============================================
     
     SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
-    SCH_AddTask(Test_PC13_LED           ,20     ,10     );
+    SCH_AddTask(Test_PC13_LED           ,12     ,10     );
     SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,50     ,8      );
     SCH_AddTask(APP                     ,50     ,9      );
-    
 
 // 启动调度器========================================================================================
 SCH_Start();
