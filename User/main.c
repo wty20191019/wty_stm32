@@ -270,7 +270,7 @@ void MPU6050_PoseTask(void)
                             &recv_pose_mpu6050.Roll,
                             &recv_pose_mpu6050.Yaw);
                             
-Serial_Printf("[plot,%f,%f,%f]",recv_pose_mpu6050.Pitch,recv_pose_mpu6050.Roll,recv_pose_mpu6050.Yaw ); 
+//Serial_Printf("[plot,%f,%f,%f]",recv_pose_mpu6050.Pitch,recv_pose_mpu6050.Roll,recv_pose_mpu6050.Yaw ); 
 
     
 
