@@ -15,7 +15,6 @@ typedef void (*TaskFunc)(void);
 
 /* 函数声明 */
 void SCH_Init(void);
-void SCH_Start(void);
 void SCH_AddTask(TaskFunc func, uint32_t period, uint8_t priority);
 void SCH_Tick(void);
 uint32_t SCH_GetTick(void);

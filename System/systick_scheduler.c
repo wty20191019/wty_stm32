@@ -30,11 +30,7 @@ void SCH_Init(void)
     SysTick_Config(SystemCoreClock / 1000);
 }
 
-/* 启动调度器 */
-void SCH_Start(void)
-{
-    // SysTick已在Init中启用
-}
+
 
 /* 添加任务 */
 void SCH_AddTask(TaskFunc func, uint32_t period, uint8_t priority)

@@ -12,10 +12,10 @@ void PID_Update(PID_t *p)
     {
         p->ErrorInt += p->Error0;
     }
-    else                            
-    {
-        p->ErrorInt = 0;
-    }
+//    else                            
+//    {
+//        p->ErrorInt = 0;
+//    }
     
     /*PID计算*/
     /*使用位置式PID公式，计算得到输出值*/

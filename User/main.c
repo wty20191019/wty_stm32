@@ -117,25 +117,37 @@ void PID_System_Init(void)
 
 
 //===================================================================================================
-// Encoder测速任务               (50ms)
+// Encoder测速任务               (5ms)
 //===================================================================================================
 void Encoder_get_speed(void)
 {
-    Speed_A = Encoder1_TIM3_Encoder_Get();
-    Speed_B = Encoder2_TIM4_Encoder_Get();
+    static uint16_t count_Encoder_get = 0;
     
-    average_speed = Speed_A + Speed_B;
-    differential_speed = Speed_A - Speed_B;
-    
+    if(count_Encoder_get < 10)
+    {
+        Speed_A += Encoder1_TIM3_Encoder_Get();
+        Speed_B += Encoder2_TIM4_Encoder_Get();
+        count_Encoder_get++;
+    }
+    else
+    {
+        Speed_A /= 10;
+        Speed_B /= 10;
+        average_speed = Speed_A + Speed_B;
+        differential_speed = Speed_A - Speed_B;
+        
+        Speed_A = 0;
+        Speed_B = 0;
+        count_Encoder_get = 0;
+    }
 
 
 //    Serial_Printf("[plot,%d,%d]"
 //                ,Speed_A
 //                ,Speed_B);
 
+
 }
-
-
 
 //===================================================================================================
 // 串口接收处理任务
@@ -194,23 +206,27 @@ void Serial_ProcessRxData(void)
                     
                     if (strcmp(Name, "1") == 0)
                     {
-                        uint8_t IntValue = atoi(Value);
-                        Serial_Printf("slider,1,%d\r\n", IntValue);
+                        float FloatValue_1 = atoi(Value);
+                        Serial_Printf("slider,1,%d\r\n", FloatValue_1);
+                        PID_average_speed.Target = FloatValue_1;
                     }
                     else if (strcmp(Name, "2") == 0)
                     {
-                        float FloatValue = atof(Value);
-                        Serial_Printf("slider,2,%f\r\n", FloatValue);
+                        float FloatValue_2 = atof(Value);
+                        Serial_Printf("slider,2,%f\r\n", FloatValue_2);
+                        PID_average_speed.Kp = FloatValue_2;
                     }
                     else if (strcmp(Name, "3") == 0)
                     {
-                        float FloatValue = atof(Value);
-                        Serial_Printf("slider,3,%f\r\n", FloatValue);
+                        float FloatValue_3 = atof(Value);
+                        Serial_Printf("slider,3,%f\r\n", FloatValue_3);
+                        PID_average_speed.Ki = FloatValue_3;
                     }
                     else if (strcmp(Name, "4") == 0)
                     {
-                        float FloatValue = atof(Value);
-                        Serial_Printf("slider,4,%f\r\n", FloatValue);
+                        float FloatValue_4 = atof(Value);
+                        Serial_Printf("slider,4,%f\r\n", FloatValue_4);
+                        PID_average_speed.Kd = FloatValue_4;
                     }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
@@ -221,8 +237,9 @@ void Serial_ProcessRxData(void)
                     int16_t RV = atoi(strtok(NULL, ","));
                     
                     
-                    Motor_Set_TIM2_ch1_PWMA( LV);
-                    Motor_Set_TIM2_ch2_PWMB( RV);
+                    //Motor_Set_TIM2_ch1_PWMA( LV-RH);
+                    //Motor_Set_TIM2_ch2_PWMB( LV+RH);
+                    
                     
                     
                     Serial_Printf("joystick,%d,%d,%d,%d\r\n", LH, LV, RH, RV);
@@ -317,14 +334,15 @@ void APP (void)
 {
 
     PID_average_speed.Actual = (float)average_speed;
+
     PID_differential_speed.Actual = (float)differential_speed;
 
     
     PID_Update(&PID_average_speed);
     PID_Update(&PID_differential_speed);
     
-    Motor_Set_TIM2_ch1_PWMA(0);  //PID_average_speed.Out + PID_differential_speed.Out
-    Motor_Set_TIM2_ch2_PWMB(0);  //PID_average_speed.Out - PID_differential_speed.Out
+    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out);  //PID_average_speed.Out + PID_differential_speed.Out
+    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out);  //PID_average_speed.Out - PID_differential_speed.Out
     
     
 //    Serial_Printf(  "[plot,%f]", LightSensor_GetPositionCentered()  );
@@ -333,6 +351,14 @@ void APP (void)
 //                    recv_pose_mpu6050.Pitch,
 //                    recv_pose_mpu6050.Roll,
 //                    recv_pose_mpu6050.Yaw);
+
+    Serial_Printf("[plot,%f,%d]"
+                ,PID_average_speed.Target
+                ,average_speed);
+
+
+
+
 
 
 }
@@ -375,18 +401,17 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(Test_PC13_LED           ,20     ,10     );
     SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
-    SCH_AddTask(Encoder_get_speed       ,50     ,8      );
+    SCH_AddTask(Encoder_get_speed       ,5      ,8      );
     SCH_AddTask(APP                     ,50     ,9      );
 
-// 启动调度器========================================================================================
-SCH_Start();
 //===================================================================================================
 
     while(1)
     {
-        
-        SCH_Dispatch();
-        __WFI();
+        //===========================
+        SCH_Dispatch();// 启动调度器
+        //__WFI();
+        //===========================
         
     }
 }
