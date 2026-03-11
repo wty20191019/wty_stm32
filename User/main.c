@@ -73,8 +73,14 @@ int16_t Speed_B;
 int16_t average_speed;
 int16_t differential_speed;
 
+int16_t LH ;
+int16_t LV ;
+int16_t RH ;
+int16_t RV ;
 
-PID_t PID_average_speed;
+
+//PID_t PID_average_speed;
+
 PID_t PID_differential_speed;
 
 
@@ -85,26 +91,26 @@ PID_t PID_differential_speed;
 void PID_System_Init(void)
 {
 
-    // PID_average_speed
-    PID_average_speed.Target = 0.0f;        // 目标值
-    PID_average_speed.Actual = 0.0f;        // 实际值
-    PID_average_speed.Out = 0.0f;           // 输出值
-    PID_average_speed.Kp = 1.44f;           // 比例系数
-    PID_average_speed.Ki = 0.095f;          // 积分系数
-    PID_average_speed.Kd = 0.42f;           // 微分系数
-    PID_average_speed.Error0 = 0.0f;        // 本次误差
-    PID_average_speed.Error1 = 0.0f;        // 上次误差
-    PID_average_speed.ErrorInt = 0.0f;      // 误差积分
-    PID_average_speed.OutMax = 1000.0f;     // 输出最大值
-    PID_average_speed.OutMin = -1000.0f;    // 输出最小值
+////    // PID_average_speed
+////    PID_average_speed.Target = 0.0f;        // 目标值
+////    PID_average_speed.Actual = 0.0f;        // 实际值
+////    PID_average_speed.Out = 0.0f;           // 输出值
+////    PID_average_speed.Kp = 1.44f;           // 比例系数
+////    PID_average_speed.Ki = 0.095f;          // 积分系数
+////    PID_average_speed.Kd = 0.42f;           // 微分系数
+////    PID_average_speed.Error0 = 0.0f;        // 本次误差
+////    PID_average_speed.Error1 = 0.0f;        // 上次误差
+////    PID_average_speed.ErrorInt = 0.0f;      // 误差积分
+////    PID_average_speed.OutMax = 1000.0f;     // 输出最大值
+////    PID_average_speed.OutMin = -1000.0f;    // 输出最小值
     
     // PID_differential_speed
     PID_differential_speed.Target = 0.0f;       // 目标值
     PID_differential_speed.Actual = 0.0f;       // 实际值
     PID_differential_speed.Out = 0.0f;          // 输出值
-    PID_differential_speed.Kp = 1.40f;          // 比例系数
-    PID_differential_speed.Ki = 0.0f;           // 积分系数
-    PID_differential_speed.Kd = 0.0f;           // 微分系数
+    PID_differential_speed.Kp = 3.18f;          // 比例系数
+    PID_differential_speed.Ki = 0.00091f;       // 积分系数
+    PID_differential_speed.Kd = 0.009f;         // 微分系数
     PID_differential_speed.Error0 = 0.0f;       // 本次误差
     PID_differential_speed.Error1 = 0.0f;       // 上次误差
     PID_differential_speed.ErrorInt = 0.0f;     // 误差积分
@@ -146,8 +152,8 @@ void Encoder_get_speed(void)
         count_Encoder_get = 0;
     }
     
-    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
-    
+//    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
+    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
 //    Serial_Printf("[plot,%d]",Speed_A_0);
 }
 
@@ -216,33 +222,36 @@ void Serial_ProcessRxData(void)
                     {
                         float FloatValue_2 = atof(Value);
                         Serial_Printf("slider,2,%f\r\n", FloatValue_2);
-                        PID_differential_speed.Kp = FloatValue_2;
+                        //PID_differential_speed.Kp = FloatValue_2;
+                        LV = FloatValue_2;
+                        
                     }
                     else if (strcmp(Name, "3") == 0)
                     {
                         float FloatValue_3 = atof(Value);
                         Serial_Printf("slider,3,%f\r\n", FloatValue_3);
-                        PID_differential_speed.Ki = FloatValue_3;
+                        //PID_differential_speed.Ki = FloatValue_3;
                     }
                     else if (strcmp(Name, "4") == 0)
                     {
                         float FloatValue_4 = atof(Value);
                         Serial_Printf("slider,4,%f\r\n", FloatValue_4);
-                        PID_differential_speed.Kd = FloatValue_4;
+                        //PID_differential_speed.Kd = FloatValue_4;
                     }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
                 {
-                    int16_t LH = atoi(strtok(NULL, ","));
-                    int16_t LV = atoi(strtok(NULL, ","));
-                    int16_t RH = atoi(strtok(NULL, ","));
-                    int16_t RV = atoi(strtok(NULL, ","));
+                     LH = atoi(strtok(NULL, ","));
+                     LV = atoi(strtok(NULL, ","));
+                     RH = atoi(strtok(NULL, ","));
+                     RV = atoi(strtok(NULL, ","));
                     
                     
 //                    Motor_Set_TIM2_ch1_PWMA( LV-RH);
 //                    Motor_Set_TIM2_ch2_PWMB( LV+RH);
-                    PID_average_speed.Target      = LV ;
-                    PID_differential_speed.Target = RH ;
+//                    PID_average_speed.Target      = LV ;
+
+//                    PID_differential_speed.Target = RH ;
 
                     
                     
@@ -284,7 +293,7 @@ void Test_PC13_LED(void)
 }
 
 //===================================================================================================
-// MPU6050任务
+// MPU6050任务            (50ms)
 //===================================================================================================
 void MPU6050_PoseTask(void)
 {
@@ -338,17 +347,22 @@ void OLED_DisplayTask(void)
 void APP (void)
 {
 
-    PID_average_speed.Actual = (float)average_speed;
+//    PID_average_speed.Actual = (float)average_speed;
 
-    PID_differential_speed.Actual = (float)differential_speed;
+//    PID_differential_speed.Actual = (float)differential_speed;
+    PID_differential_speed.Actual = (float)recv_pose_mpu6050.Yaw;
 
     
-    PID_Update(&PID_average_speed);
+//    PID_Update(&PID_average_speed);
     PID_Update(&PID_differential_speed);
     
-    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out - PID_differential_speed.Out);  //                PID_average_speed.Out
-    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out + PID_differential_speed.Out);  //       PID_average_speed.Out
-    
+//    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out - PID_differential_speed.Out);  //       PID_average_speed.Out
+//    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out + PID_differential_speed.Out);  //       PID_average_speed.Out
+
+    Motor_Set_TIM2_ch1_PWMA( LV + PID_differential_speed.Out);  //       PID_average_speed.Out
+    Motor_Set_TIM2_ch2_PWMB( LV - PID_differential_speed.Out);  //       PID_average_speed.Out
+
+
     
 //    Serial_Printf(  "[plot,%f]", LightSensor_GetPositionCentered()  );
 
@@ -404,7 +418,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     
     SCH_AddTask(Serial_ProcessRxData    ,10     ,8      );
     SCH_AddTask(Test_PC13_LED           ,20     ,10     );
-    SCH_AddTask(MPU6050_PoseTask        ,20     ,7      );
+    SCH_AddTask(MPU6050_PoseTask        ,50     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,2      ,8      );
     SCH_AddTask(APP                     ,50     ,9      );
