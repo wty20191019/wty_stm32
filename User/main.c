@@ -104,6 +104,7 @@ void PID_System_Init(void)
 ////    PID_average_speed.OutMax = 1000.0f;     // 输出最大值
 ////    PID_average_speed.OutMin = -1000.0f;    // 输出最小值
     
+    
     // PID_differential_speed
     PID_differential_speed.Target = 0.0f;       // 目标值
     PID_differential_speed.Actual = 0.0f;       // 实际值
@@ -153,7 +154,7 @@ void Encoder_get_speed(void)
     }
     
 //    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
-    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
+////    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
 //    Serial_Printf("[plot,%d]",Speed_A_0);
 }
 
@@ -222,21 +223,21 @@ void Serial_ProcessRxData(void)
                     {
                         float FloatValue_2 = atof(Value);
                         Serial_Printf("slider,2,%f\r\n", FloatValue_2);
-                        //PID_differential_speed.Kp = FloatValue_2;
-                        LV = FloatValue_2;
+                        PID_differential_speed.Kp = FloatValue_2;
+                        //LV = FloatValue_2;
                         
                     }
                     else if (strcmp(Name, "3") == 0)
                     {
                         float FloatValue_3 = atof(Value);
                         Serial_Printf("slider,3,%f\r\n", FloatValue_3);
-                        //PID_differential_speed.Ki = FloatValue_3;
+                        PID_differential_speed.Ki = FloatValue_3;
                     }
                     else if (strcmp(Name, "4") == 0)
                     {
                         float FloatValue_4 = atof(Value);
                         Serial_Printf("slider,4,%f\r\n", FloatValue_4);
-                        //PID_differential_speed.Kd = FloatValue_4;
+                        PID_differential_speed.Kd = FloatValue_4;
                     }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
@@ -350,7 +351,7 @@ void APP (void)
 //    PID_average_speed.Actual = (float)average_speed;
 
 //    PID_differential_speed.Actual = (float)differential_speed;
-    PID_differential_speed.Actual = (float)recv_pose_mpu6050.Yaw;
+    PID_differential_speed.Actual = (float)LightSensor_GetPositionCentered();
 
     
 //    PID_Update(&PID_average_speed);
@@ -359,8 +360,8 @@ void APP (void)
 //    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out - PID_differential_speed.Out);  //       PID_average_speed.Out
 //    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out + PID_differential_speed.Out);  //       PID_average_speed.Out
 
-    Motor_Set_TIM2_ch1_PWMA( LV + PID_differential_speed.Out);  //       PID_average_speed.Out
-    Motor_Set_TIM2_ch2_PWMB( LV - PID_differential_speed.Out);  //       PID_average_speed.Out
+    Motor_Set_TIM2_ch1_PWMA( LV - PID_differential_speed.Out);  //       PID_average_speed.Out
+    Motor_Set_TIM2_ch2_PWMB( LV + PID_differential_speed.Out);  //       PID_average_speed.Out
 
 
     
@@ -374,6 +375,8 @@ void APP (void)
 //    Serial_Printf("[plot,%f,%d]"
 //                ,PID_average_speed.Target
 //                ,average_speed);
+
+    Serial_Printf("[plot,%f]",LightSensor_GetPositionCentered()  );
 
 
 
@@ -409,7 +412,9 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
     Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     
-    PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();  
+    PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
+    
+    LightSensor_Init();             OLED_ShowNum(0, 3,11, 2, OLED_8X16);OLED_Update();
     
 
 //===================================================================================================
