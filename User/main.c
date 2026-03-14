@@ -81,13 +81,14 @@ int16_t RH ;
 int16_t RV ;
 
 
-float k_out_lightsensor ;
-float c_differential_speed ;
-float k_c_differential_speed ;
+float k_out_lightsensor = 100;
 
+float k_in_lightsensor = 10 ;
+
+//float c_differential_speed ;
 //PID_t PID_average_speed;
 
-PID_t PID_differential_speed;
+//PID_t PID_differential_speed;
 
 
 
@@ -132,63 +133,112 @@ void PID_System_Init(void)
 //===================================================================================================
 // 光敏传感器量化函数
 //===================================================================================================
-float LightSensor_GetPositionCentered(void)
+float LightSensor_GetPos(void)
 {
-    // 读取传感器状态
-    float sensors[4];
-    sensors[0] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) ? 1.0f : 0.0f;  // B1
-    sensors[1] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == 0) ? 1.0f : 0.0f;  // B0
-    sensors[2] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_5) == 0) ? 1.0f : 0.0f;  // A5
-    sensors[3] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == 0) ? 1.0f : 0.0f;  // A4
+    static float last_pos = 0.0f;
     
-    if(            sensors[0]== 0
-                && sensors[1]== 1
-                && sensors[2]== 1
-                && sensors[3]== 0)
-                {
-                    
-                    return 0;
-                }
-    else if(       sensors[0]== 0
-                && sensors[1]== 0
-                && sensors[2]== 1
-                && sensors[3]== 0)
-                {
-                    
-                    return -1;
-                }
-    else if(       sensors[0]== 0
-                && sensors[1]== 1
-                && sensors[2]== 0
-                && sensors[3]== 0)
-                {
-                    
-                    
-                    return +k_out_lightsensor;
-                }
-    else if(       sensors[0]== 1
-                && sensors[1]== 0
-                && sensors[2]== 0
-                && sensors[3]== 0)
-                {
-                    
-                    return +1;
-                }
-    else if(       sensors[0]== 0
-                && sensors[1]== 0
-                && sensors[2]== 0
-                && sensors[3]== 1)
-                {
-                    
-                    return -k_out_lightsensor;
-                }
-    else
-                {
-                    
-                    return 0;
-                }
-
+    // 读取四个传感器状态
+    
+    float s0 = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == 0) ? 1.0f : 0.0f;  // B0
+    float s1 = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) ? 1.0f : 0.0f;  // B1
+    float s2 = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_5) == 0) ? 1.0f : 0.0f;  // A5
+    float s3 = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == 0) ? 1.0f : 0.0f;  // A4
+    
+    
+    if (s0 == 0 && s1 == 1 && s2 == 1 && s3 == 0) {
+        last_pos = 0.0f;
+    }
+    
+    else if (s0 == 0 && s1 == 0 && s2 == 1 && s3 == 0) {
+        last_pos = k_in_lightsensor;
+    }
+    
+    else if (s0 == 0 && s1 == 1 && s2 == 0 && s3 == 0) {
+        last_pos = -k_in_lightsensor;
+    }
+    
+    else if (s0 == 1 && s1 == 0 && s2 == 0 && s3 == 0) {
+        last_pos = -k_out_lightsensor;
+    }
+    
+    else if (s0 == 0 && s1 == 0 && s2 == 0 && s3 == 1) {
+        last_pos = k_out_lightsensor;
+    }
+    
+    
+    return last_pos;
 }
+
+
+//float LightSensor_GetPos(void)
+//{
+//    static uint16_t last_port = 0;
+//    // 读取传感器状态
+//    float sensors[4];
+//    sensors[0] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) ? 1.0f : 0.0f;  // B1
+//    sensors[1] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == 0) ? 1.0f : 0.0f;  // B0
+//    sensors[2] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_5) == 0) ? 1.0f : 0.0f;  // A5
+//    sensors[3] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == 0) ? 1.0f : 0.0f;  // A4
+//    
+//    if          (  sensors[0]== 0
+//                && sensors[1]== 1
+//                && sensors[2]== 1
+//                && sensors[3]== 0)
+//                {
+//                    last_port=0;
+//                    return last_port;
+//                }
+//                
+//    else if     (  sensors[0]== 0
+//                && sensors[1]== 0
+//                && sensors[2]== 1
+//                && sensors[3]== 0)
+//                {
+//                    last_port = +k_in_lightsensor;
+//                    return last_port;
+//                }
+//                
+//    else if     (  sensors[0]== 0
+//                && sensors[1]== 1
+//                && sensors[2]== 0
+//                && sensors[3]== 0)
+//                {
+//                    
+//                    last_port = -k_in_lightsensor;
+//                    return last_port;
+//                }
+//                
+//    else if     (  sensors[0]== 1
+//                && sensors[1]== 0
+//                && sensors[2]== 0
+//                && sensors[3]== 0)
+//                {
+//                    last_port = - k_out_lightsensor;
+//                    return last_port;
+//                }
+//                
+//    else if     (       sensors[0]== 0
+//                && sensors[1]== 0
+//                && sensors[2]== 0
+//                && sensors[3]== 1)
+//                {
+//                    last_port = + k_out_lightsensor;
+//                    return last_port;
+//                }
+//    else
+//                {
+//                return last_port;
+//                }
+
+//    
+
+
+//}
+
+
+
+
+
 
 
 
@@ -285,27 +335,27 @@ void Serial_ProcessRxData(void)
                     {
                         float FloatValue_1 = atoi(Value);
                         Serial_Printf("slider,1,%d\r\n", FloatValue_1);
-                        PID_differential_speed.Target = FloatValue_1;
+                        k_out_lightsensor = FloatValue_1;
                     }
                     else if (strcmp(Name, "2") == 0)
                     {
                         float FloatValue_2 = atof(Value);
                         Serial_Printf("slider,2,%f\r\n", FloatValue_2);
-                        PID_differential_speed.Kp = FloatValue_2;
-                        //LV = FloatValue_2;
+                        k_in_lightsensor = FloatValue_2;
+                        
                         
                     }
                     else if (strcmp(Name, "3") == 0)
                     {
                         float FloatValue_3 = atof(Value);
                         Serial_Printf("slider,3,%f\r\n", FloatValue_3);
-                        PID_differential_speed.Ki = FloatValue_3;
+                        //PID_differential_speed.Ki = FloatValue_3;
                     }
                     else if (strcmp(Name, "4") == 0)
                     {
                         float FloatValue_4 = atof(Value);
                         Serial_Printf("slider,4,%f\r\n", FloatValue_4);
-                        PID_differential_speed.Kd = FloatValue_4;
+                        //PID_differential_speed.Kd = FloatValue_4;
                     }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
@@ -428,8 +478,8 @@ void APP (void)
 //    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out - PID_differential_speed.Out);  //       PID_average_speed.Out
 //    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out + PID_differential_speed.Out);  //       PID_average_speed.Out
 
-    Motor_Set_TIM2_ch1_PWMA( (int16_t)(LV - k_c_differential_speed*LightSensor_GetPositionCentered()  )  );
-    Motor_Set_TIM2_ch2_PWMB( (int16_t)(LV + k_c_differential_speed*LightSensor_GetPositionCentered()  )  );
+    Motor_Set_TIM2_ch1_PWMA( (LV -LightSensor_GetPos()  )    );
+    Motor_Set_TIM2_ch2_PWMB( (LV +LightSensor_GetPos()  )    );
 
 
     
@@ -444,7 +494,7 @@ void APP (void)
 //                ,PID_average_speed.Target
 //                ,average_speed);
 
-    Serial_Printf("[plot,%f]",LightSensor_GetPositionCentered()  );
+    Serial_Printf("[plot,%f]",LightSensor_GetPos()  );
 
 
 
@@ -494,7 +544,7 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(MPU6050_PoseTask        ,50     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
     SCH_AddTask(Encoder_get_speed       ,2      ,8      );
-    SCH_AddTask(APP                     ,50     ,9      );
+    SCH_AddTask(APP                     ,20     ,9      );
 
 //===================================================================================================
 
