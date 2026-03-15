@@ -24,14 +24,14 @@
     
 #include "PWM.h"                        //Base    TIM2_CH1(PA0)_CH2(PA1)
 #include "Motor.h"                      //Base    PWM.h     PWMA    (PA0)(PB4)(PB5)(PA1)(PA15)(PB3)
-#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
+
 #include "PID_system.h"                 //base     
 
 #include "LightSensor.h"
 
 
 
-
+//#include "Encoder.h"                    //Base    TIM3_CH1(PA67)    TIM4_CH1(PB67)    IC_PWMI.h 与 Encoder.h  只能起用一个
 //#include "key.h"                        //Base    (PB1 ) (PB11)
 //#include "IC_PWMI.h"                    //Base    TIM3_CH1(PA6 )    TIM4_CH1(PB6 )    IC_PWMI.h 与 Encoder.h  只能起用一个
 
@@ -242,39 +242,39 @@ float LightSensor_GetPos(void)
 
 
 
-//===================================================================================================
-// Encoder测速任务               (2x25ms)
-//===================================================================================================
-void Encoder_get_speed(void)
-{
-    static uint16_t count_Encoder_get = 0;
-    
-    if(count_Encoder_get < 25)
-    {
-        Speed_A += Encoder1_TIM3_Encoder_Get();
-        Speed_B += Encoder2_TIM4_Encoder_Get();
-        count_Encoder_get++;
-    }
-    else
-    {
-        Speed_A /= 25;
-        Speed_B /= 25;
-        
-        Speed_A_0=Speed_A;
-        Speed_B_0=Speed_B;
-        
-        average_speed = (Speed_A_0 + Speed_B_0)/2;
-        differential_speed = Speed_A_0 - Speed_B_0;
-        
-        Speed_A = 0;
-        Speed_B = 0;
-        count_Encoder_get = 0;
-    }
-    
-//    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
-////    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
-//    Serial_Printf("[plot,%d]",Speed_A_0);
-}
+//////===================================================================================================
+////// Encoder测速任务               (2x25ms)
+//////===================================================================================================
+////void Encoder_get_speed(void)
+////{
+////    static uint16_t count_Encoder_get = 0;
+////    
+////    if(count_Encoder_get < 25)
+////    {
+////        Speed_A += Encoder1_TIM3_Encoder_Get();
+////        Speed_B += Encoder2_TIM4_Encoder_Get();
+////        count_Encoder_get++;
+////    }
+////    else
+////    {
+////        Speed_A /= 25;
+////        Speed_B /= 25;
+////        
+////        Speed_A_0=Speed_A;
+////        Speed_B_0=Speed_B;
+////        
+////        average_speed = (Speed_A_0 + Speed_B_0)/2;
+////        differential_speed = Speed_A_0 - Speed_B_0;
+////        
+////        Speed_A = 0;
+////        Speed_B = 0;
+////        count_Encoder_get = 0;
+////    }
+////    
+//////    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
+////////    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
+//////    Serial_Printf("[plot,%d]",Speed_A_0);
+////}
 
 //===================================================================================================
 // 串口接收处理任务
@@ -527,8 +527,8 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     
     TIM2_PWM_Init();                OLED_ShowNum(0, 3, 6, 2, OLED_8X16);OLED_Update();
     Motor_Init();                   OLED_ShowNum(0, 3, 7, 2, OLED_8X16);OLED_Update();
-    Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
-    Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
+////    Encoder1_TIM3_Init();           OLED_ShowNum(0, 3, 8, 2, OLED_8X16);OLED_Update();
+////    Encoder2_TIM4_Init();           OLED_ShowNum(0, 3, 9, 2, OLED_8X16);OLED_Update();
     
     PID_System_Init();              OLED_ShowNum(0, 3,10, 2, OLED_8X16);OLED_Update();
     
@@ -543,8 +543,10 @@ NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
     SCH_AddTask(Test_PC13_LED           ,20     ,10     );
     SCH_AddTask(MPU6050_PoseTask        ,50     ,7      );
     SCH_AddTask(OLED_DisplayTask        ,20     ,8      );
-    SCH_AddTask(Encoder_get_speed       ,2      ,8      );
     SCH_AddTask(APP                     ,20     ,9      );
+    
+    
+//    SCH_AddTask(Encoder_get_speed       ,2      ,8      );
 
 //===================================================================================================
 
