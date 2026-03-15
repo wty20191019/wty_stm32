@@ -4,7 +4,7 @@
 #include "stm32f10x.h"
 
 void LightSensor_Init(void);
-
+float LightSensor_GetPos(void);
 
 #endif /* __LIGHT_SENSOR_H */
 

@@ -80,15 +80,14 @@ int16_t LV ;
 int16_t RH ;
 int16_t RV ;
 
+float FloatValue_1 ;
 
-float k_out_lightsensor = 100;
 
-float k_in_lightsensor = 10 ;
 
 //float c_differential_speed ;
 //PID_t PID_average_speed;
 
-//PID_t PID_differential_speed;
+PID_t PID_differential_speed;
 
 
 
@@ -115,128 +114,20 @@ void PID_System_Init(void)
 ////    PID_average_speed.OutMin = -1000.0f;    // 输出最小值
     
     
-////    // PID_differential_speed
-////    PID_differential_speed.Target = 0.0f;       // 目标值
-////    PID_differential_speed.Actual = 0.0f;       // 实际值
-////    PID_differential_speed.Out = 0.0f;          // 输出值
-////    PID_differential_speed.Kp = 3.18f;          // 比例系数
-////    PID_differential_speed.Ki = 0.00091f;       // 积分系数
-////    PID_differential_speed.Kd = 0.009f;         // 微分系数
-////    PID_differential_speed.Error0 = 0.0f;       // 本次误差
-////    PID_differential_speed.Error1 = 0.0f;       // 上次误差
-////    PID_differential_speed.ErrorInt = 0.0f;     // 误差积分
-////    PID_differential_speed.OutMax = 500.0f;     // 输出最大值
-////    PID_differential_speed.OutMin = -500.0f;    // 输出最小值
-////    
+    // PID_differential_speed
+    PID_differential_speed.Target = 0.0f;       // 目标值
+    PID_differential_speed.Actual = 0.0f;       // 实际值
+    PID_differential_speed.Out = 0.0f;          // 输出值
+    PID_differential_speed.Kp = 3.723f;         // 比例系数
+    PID_differential_speed.Ki = 0.0002f;        // 积分系数
+    PID_differential_speed.Kd = 17.33102f;      // 微分系数
+    PID_differential_speed.Error0 = 0.0f;       // 本次误差
+    PID_differential_speed.Error1 = 0.0f;       // 上次误差
+    PID_differential_speed.ErrorInt = 0.0f;     // 误差积分
+    PID_differential_speed.OutMax = 500.0f;     // 输出最大值
+    PID_differential_speed.OutMin = -500.0f;    // 输出最小值
+    
 }
-
-//===================================================================================================
-// 光敏传感器量化函数
-//===================================================================================================
-float LightSensor_GetPos(void)
-{
-    static float last_pos = 0.0f;
-    
-    // 读取四个传感器状态
-    
-    float s0 = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == 0) ? 1.0f : 0.0f;  // B0
-    float s1 = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) ? 1.0f : 0.0f;  // B1
-    float s2 = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_5) == 0) ? 1.0f : 0.0f;  // A5
-    float s3 = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == 0) ? 1.0f : 0.0f;  // A4
-    
-    
-    if (s0 == 0 && s1 == 1 && s2 == 1 && s3 == 0) {
-        last_pos = 0.0f;
-    }
-    
-    else if (s0 == 0 && s1 == 0 && s2 == 1 && s3 == 0) {
-        last_pos = k_in_lightsensor;
-    }
-    
-    else if (s0 == 0 && s1 == 1 && s2 == 0 && s3 == 0) {
-        last_pos = -k_in_lightsensor;
-    }
-    
-    else if (s0 == 1 && s1 == 0 && s2 == 0 && s3 == 0) {
-        last_pos = -k_out_lightsensor;
-    }
-    
-    else if (s0 == 0 && s1 == 0 && s2 == 0 && s3 == 1) {
-        last_pos = k_out_lightsensor;
-    }
-    
-    
-    return last_pos;
-}
-
-
-//float LightSensor_GetPos(void)
-//{
-//    static uint16_t last_port = 0;
-//    // 读取传感器状态
-//    float sensors[4];
-//    sensors[0] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) ? 1.0f : 0.0f;  // B1
-//    sensors[1] = (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_0) == 0) ? 1.0f : 0.0f;  // B0
-//    sensors[2] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_5) == 0) ? 1.0f : 0.0f;  // A5
-//    sensors[3] = (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4) == 0) ? 1.0f : 0.0f;  // A4
-//    
-//    if          (  sensors[0]== 0
-//                && sensors[1]== 1
-//                && sensors[2]== 1
-//                && sensors[3]== 0)
-//                {
-//                    last_port=0;
-//                    return last_port;
-//                }
-//                
-//    else if     (  sensors[0]== 0
-//                && sensors[1]== 0
-//                && sensors[2]== 1
-//                && sensors[3]== 0)
-//                {
-//                    last_port = +k_in_lightsensor;
-//                    return last_port;
-//                }
-//                
-//    else if     (  sensors[0]== 0
-//                && sensors[1]== 1
-//                && sensors[2]== 0
-//                && sensors[3]== 0)
-//                {
-//                    
-//                    last_port = -k_in_lightsensor;
-//                    return last_port;
-//                }
-//                
-//    else if     (  sensors[0]== 1
-//                && sensors[1]== 0
-//                && sensors[2]== 0
-//                && sensors[3]== 0)
-//                {
-//                    last_port = - k_out_lightsensor;
-//                    return last_port;
-//                }
-//                
-//    else if     (       sensors[0]== 0
-//                && sensors[1]== 0
-//                && sensors[2]== 0
-//                && sensors[3]== 1)
-//                {
-//                    last_port = + k_out_lightsensor;
-//                    return last_port;
-//                }
-//    else
-//                {
-//                return last_port;
-//                }
-
-//    
-
-
-//}
-
-
-
 
 
 
@@ -245,8 +136,8 @@ float LightSensor_GetPos(void)
 //////===================================================================================================
 ////// Encoder测速任务               (2x25ms)
 //////===================================================================================================
-////void Encoder_get_speed(void)
-////{
+void Encoder_get_speed(void)
+{
 ////    static uint16_t count_Encoder_get = 0;
 ////    
 ////    if(count_Encoder_get < 25)
@@ -274,7 +165,7 @@ float LightSensor_GetPos(void)
 //////    Serial_Printf("[plot,%d,%d]",Speed_A_0,Speed_B_0);
 ////////    Serial_Printf("[plot,%f,%f]",PID_differential_speed.Target,PID_differential_speed.Actual);    
 //////    Serial_Printf("[plot,%d]",Speed_A_0);
-////}
+}
 
 //===================================================================================================
 // 串口接收处理任务
@@ -333,15 +224,17 @@ void Serial_ProcessRxData(void)
                     
                     if (strcmp(Name, "1") == 0)
                     {
-                        float FloatValue_1 = atoi(Value);
+                        //float FloatValue_1 = atoi(Value);
+                        FloatValue_1 = atoi(Value);
                         Serial_Printf("slider,1,%d\r\n", FloatValue_1);
-                        k_out_lightsensor = FloatValue_1;
+                        //PID_differential_speed.Kp=FloatValue_1;
+                        
                     }
                     else if (strcmp(Name, "2") == 0)
                     {
                         float FloatValue_2 = atof(Value);
                         Serial_Printf("slider,2,%f\r\n", FloatValue_2);
-                        k_in_lightsensor = FloatValue_2;
+                        PID_differential_speed.Kp=FloatValue_2;
                         
                         
                     }
@@ -349,13 +242,13 @@ void Serial_ProcessRxData(void)
                     {
                         float FloatValue_3 = atof(Value);
                         Serial_Printf("slider,3,%f\r\n", FloatValue_3);
-                        //PID_differential_speed.Ki = FloatValue_3;
+                        PID_differential_speed.Ki = FloatValue_3;
                     }
                     else if (strcmp(Name, "4") == 0)
                     {
                         float FloatValue_4 = atof(Value);
                         Serial_Printf("slider,4,%f\r\n", FloatValue_4);
-                        //PID_differential_speed.Kd = FloatValue_4;
+                        PID_differential_speed.Kd = FloatValue_4;
                     }
                 }
                 else if (strcmp(Tag, "joystick") == 0)
@@ -466,20 +359,13 @@ void OLED_DisplayTask(void)
 void APP (void)
 {
 
-//    PID_average_speed.Actual = (float)average_speed;
 
-//    PID_differential_speed.Actual = (float)differential_speed;
-//    PID_differential_speed.Actual = (float)LightSensor_GetPositionCentered();
 
+    PID_differential_speed.Actual = LightSensor_GetPos();
+    PID_Update(&PID_differential_speed);
     
-//    PID_Update(&PID_average_speed);
-//    PID_Update(&PID_differential_speed);
-    
-//    Motor_Set_TIM2_ch1_PWMA(PID_average_speed.Out - PID_differential_speed.Out);  //       PID_average_speed.Out
-//    Motor_Set_TIM2_ch2_PWMB(PID_average_speed.Out + PID_differential_speed.Out);  //       PID_average_speed.Out
-
-    Motor_Set_TIM2_ch1_PWMA( (LV -LightSensor_GetPos()  )    );
-    Motor_Set_TIM2_ch2_PWMB( (LV +LightSensor_GetPos()  )    );
+    Motor_Set_TIM2_ch1_PWMA(FloatValue_1+ PID_differential_speed.Out);
+    Motor_Set_TIM2_ch2_PWMB(FloatValue_1- PID_differential_speed.Out);
 
 
     
